@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo Feliz V8 - Fix Ícones</title>
+<title>Bingo Feliz V8.1 Mobile</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -18,6 +18,7 @@
 </head>
 <body class="bg-black text-white min-h-screen">
 <div class="max-w-6xl mx-auto p-4">
+<div id="alertaFile" class="hidden bg-red-600 text-white p-3 rounded-xl mb-4 font-bold text-center">⚠️ Você está abrindo como arquivo. Hospede no Netlify/Vercel/GitHub Pages em HTTPS, senão no celular não funciona!</div>
 <div id="tela-home" class="min-h-[90vh] flex items-center justify-center">
 <div class="bg-white text-black rounded-[24px] p-7 w-full max-w-lg">
 <h1 class="text-4xl font-black">BINGO<span class="bg-black text-white px-2 ml-2">FELIZ</span></h1>
@@ -38,6 +39,7 @@
 <p class="text-[11px] font-black">LINK PARA CONVIDADOS:</p>
 <p id="txtLink" class="font-mono text-xs break-all bg-white p-3 rounded-lg border mt-2"></p>
 <div id="qrcodeHome" class="mt-3 flex justify-center bg-white p-3 rounded-xl border"></div>
+<p id="txtLinkAdmin" class="font-mono text-[10px] break-all bg-yellow-100 p-2 rounded-lg border mt-2"></p>
 </div>
 <div class="grid grid-cols-1 gap-3">
 <button onclick="copiarWhats()" class="bg-[#25D366] text-black rounded-xl py-3.5 font-black">📲 COMPARTILHAR LINK DA SALA</button>
@@ -69,9 +71,7 @@
 <button onclick="setCorIcone('#3b82f6')" class="w-8 h-8 rounded-full bg-blue-500"></button>
 <button onclick="setCorIcone('#eab308')" class="w-8 h-8 rounded-full bg-yellow-500"></button>
 </div>
-<div class="text-center mb-4 text-sm font-black bg-zinc-100 p-3 rounded-xl">
-Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middle"></span> <span id="previewTexto" class="text-[11px] opacity-60">número visível atrás</span>
-</div>
+<div class="text-center mb-4 text-sm font-black bg-zinc-100 p-3 rounded-xl">Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middle"></span></div>
 <button onclick="confirmarNome()" class="w-full bg-black text-white rounded-xl py-4 font-black">ENTRAR</button>
 </div>
 </div>
@@ -125,12 +125,11 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 </div>
 </div>
 <script>
+if(location.protocol==='file:'){ document.getElementById('alertaFile').classList.remove('hidden'); }
+const PEER_CONFIG={ config:{ iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}] } };
 let peer=null, connAdmin=null, conexoes={}, souAdmin=false, codigoSala=null, meuId=null, meuNome=null, corIcone='#000000', meuLimiteAnterior=1;
-let modoEscolhaExtra=false;
-let marcadorSelecionado='check';
+let modoEscolhaExtra=false; let marcadorSelecionado='check';
 let estadoSala={nome:'', total:20, limitePadrao:1, cartelas:[], jogadores:[], numerosSorteados:[], status:'lobby'};
-
-// ÍCONES SVG QUE MUDAM DE COR (do segundo código)
 const ICONES={
 check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l10-10"/></svg>`,
 x:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
@@ -138,130 +137,73 @@ heart:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.5-4.35-9-
 circle:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="9"/></svg>`,
 star:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.5L22 9.3l-5 5 1.2 7L12 18l-6.2 3.3L7 14.3l-5-5 7.1-.8L12 2z"/></svg>`
 };
-function renderIconGrid(){
-  const grid=document.getElementById('iconGrid'); if(!grid) return;
-  grid.innerHTML='';
-  Object.keys(ICONES).forEach(k=>{
-    const b=document.createElement('button');
-    b.className='icon-option border-2 rounded-xl p-3 flex items-center justify-center '+(k===marcadorSelecionado?'border-black bg-zinc-100':'border-zinc-200');
-    b.innerHTML=ICONES[k]; b.style.color=corIcone;
-    b.onclick=()=>{ marcadorSelecionado=k; renderIconGrid(); atualizarPreview(); };
-    grid.appendChild(b);
+function renderIconGrid(){ const grid=document.getElementById('iconGrid'); if(!grid) return; grid.innerHTML=''; Object.keys(ICONES).forEach(k=>{ const b=document.createElement('button'); b.className='icon-option border-2 rounded-xl p-3 flex items-center justify-center '+(k===marcadorSelecionado?'border-black bg-zinc-100':'border-zinc-200'); b.innerHTML=ICONES[k]; b.style.color=corIcone; b.onclick=()=>{ marcadorSelecionado=k; renderIconGrid(); atualizarPreview(); }; grid.appendChild(b); }); }
+function atualizarPreview(){ const el=document.getElementById('marcadorModalDisplay'); if(!el) return; el.innerHTML=ICONES[marcadorSelecionado]; el.style.color=corIcone; }
+function setCorIcone(cor){ corIcone=cor; renderIconGrid(); atualizarPreview(); }
+setTimeout(()=>{ renderIconGrid(); atualizarPreview(); },100);
+function genCartelas(total){ const cartelas=[]; function numerosDaFaixa(min, max, qtd){ const arr=[...Array(max-min+1).keys()].map(i=>i+min); return arr.sort(()=>0.5-Math.random()).slice(0,qtd); } for(let i=0;i<total;i++){ const colB=numerosDaFaixa(1,15,5); const colI=numerosDaFaixa(16,30,5); const colN=numerosDaFaixa(31,45,4); const colG=numerosDaFaixa(46,60,5); const colO=numerosDaFaixa(61,75,5); const grid=[]; let idxN=0; for(let r=0;r<5;r++){ let row=[]; row.push(colB[r]); row.push(colI[r]); if(r===2){ row.push('BINGO FELIZ'); } else { row.push(colN[idxN++]); } row.push(colG[r]); row.push(colO[r]); grid.push(row); } cartelas.push({id:i+1, numero:String(i+1).padStart(2,'0'), grid, donoId:null, donoNome:null}); } return cartelas; }
+function getLimite(j){return j.limite!=null? j.limite : estadoSala.limitePadrao;}
+function criarPeerAdmin(codigo){
+  peer=new Peer('bingo-'+codigo, PEER_CONFIG);
+  peer.on('open', id=>{
+    console.log('Peer admin aberto', id);
+    document.getElementById('statusConexao').innerText='ADMIN ONLINE'; document.getElementById('statusConexao').className='text-[10px] px-2 py-1 rounded-full font-bold bg-green-400 text-black';
+    peer.on('connection', conn=>{
+      conn.on('open', ()=>{
+        conexoes[conn.peer]=conn;
+        conn.on('data', data=>handleDataAdmin(data, conn));
+        conn.on('close', ()=>{ delete conexoes[conn.peer]; broadcastEstado(); });
+        conn.send({type:'estado', estado:estadoSala});
+      });
+    });
+    peer.on('disconnected', ()=>{ console.log('desconectado, reconectando...'); peer.reconnect(); });
+    peer.on('error', err=>{ console.log('peer error', err); });
   });
 }
-function atualizarPreview(){
-  const el=document.getElementById('marcadorModalDisplay'); if(!el) return;
-  el.innerHTML=ICONES[marcadorSelecionado]; el.style.color=corIcone;
-}
-function setCorIcone(cor){ corIcone=cor; renderIconGrid(); atualizarPreview(); }
-// inicializa grid
-setTimeout(()=>{ renderIconGrid(); atualizarPreview(); },100);
-
-function genCartelas(total){
-  const cartelas=[];
-  function numerosDaFaixa(min, max, qtd){
-    const arr=[...Array(max-min+1).keys()].map(i=>i+min);
-    return arr.sort(()=>0.5-Math.random()).slice(0,qtd);
-  }
-  for(let i=0;i<total;i++){
-    const colB=numerosDaFaixa(1,15,5);
-    const colI=numerosDaFaixa(16,30,5);
-    const colN=numerosDaFaixa(31,45,4);
-    const colG=numerosDaFaixa(46,60,5);
-    const colO=numerosDaFaixa(61,75,5);
-    const grid=[]; let idxN=0;
-    for(let r=0;r<5;r++){
-      let row=[];
-      row.push(colB[r]);
-      row.push(colI[r]);
-      if(r===2){ row.push('BINGO FELIZ'); }
-      else { row.push(colN[idxN++]); }
-      row.push(colG[r]);
-      row.push(colO[r]);
-      grid.push(row);
-    }
-    cartelas.push({id:i+1, numero:String(i+1).padStart(2,'0'), grid, donoId:null, donoNome:null});
-  }
-  return cartelas;
-}
-function getLimite(j){return j.limite!=null? j.limite : estadoSala.limitePadrao;}
 function criarSala(){
-  const senha=document.getElementById('inputSenha').value;
-  if(senha!=='M@ki0110'){ alert('Senha incorreta!'); return; }
-  const nome=document.getElementById('inputNomeSala').value||'Bingo Feliz';
-  const total=parseInt(document.getElementById('inputTotal').value)||20;
-  const limite=parseInt(document.getElementById('inputLimite').value)||1;
+  const senha=document.getElementById('inputSenha').value; if(senha!=='M@ki0110'){ alert('Senha incorreta!'); return; }
+  const nome=document.getElementById('inputNomeSala').value||'Bingo Feliz'; const total=parseInt(document.getElementById('inputTotal').value)||20; const limite=parseInt(document.getElementById('inputLimite').value)||1;
   const codigo=Math.random().toString(36).substring(2,7).toUpperCase()+'-'+Math.random().toString(36).substring(2,4).toUpperCase();
   estadoSala={nome, total, limitePadrao:limite, cartelas:genCartelas(total), jogadores:[], numerosSorteados:[], status:'lobby', codigo};
-  localStorage.setItem('bingo_estado_'+codigo, JSON.stringify(estadoSala));
-  peer=new Peer('bingo-'+codigo);
-  peer.on('open', id=>{
-    codigoSala=codigo; souAdmin=true; meuId='admin-'+codigo; meuNome='Admin';
-    const link=location.origin+location.pathname+'?sala='+codigo;
-    document.getElementById('txtLink').innerText=link;
-    document.getElementById('qrcodeHome').innerHTML=''; new QRCode(document.getElementById('qrcodeHome'), {text:link, width:120, height:120});
-    document.getElementById('home-criar').classList.add('hidden');
-    document.getElementById('home-link').classList.remove('hidden');
-    window._linkSala=link;
-    peer.on('connection', conn=>{ conn.on('open', ()=>{ conexoes[conn.peer]=conn; conn.on('data', data=>handleDataAdmin(data, conn)); conn.on('close', ()=>{ delete conexoes[conn.peer]; broadcastEstado(); }); conn.send({type:'estado', estado:estadoSala}); }); });
-  });
+  localStorage.setItem('bingo_estado_'+codigo, JSON.stringify(estadoSala)); codigoSala=codigo; souAdmin=true; meuId='admin-'+codigo; meuNome='Admin';
+  const link=location.origin+location.pathname+'?sala='+codigo; const linkAdmin=location.origin+location.pathname+'?sala='+codigo+'&admin=1';
+  document.getElementById('txtLink').innerText=link; document.getElementById('txtLinkAdmin').innerText='SEU LINK ADMIN (salve!): '+linkAdmin;
+  document.getElementById('qrcodeHome').innerHTML=''; new QRCode(document.getElementById('qrcodeHome'), {text:link, width:120, height:120});
+  document.getElementById('home-criar').classList.add('hidden'); document.getElementById('home-link').classList.remove('hidden'); window._linkSala=link; window._linkAdmin=linkAdmin;
+  criarPeerAdmin(codigo);
 }
-function copiarWhats(){const t=`🎉 Bingo Feliz!\nSala: ${estadoSala.nome}\nLink: ${window._linkSala}`;navigator.clipboard.writeText(t);alert('Link copiado!');}
+function copiarWhats(){navigator.clipboard.writeText(`🎉 Bingo Feliz!\nSala: ${estadoSala.nome}\nLink: ${window._linkSala}`); alert('Link copiado! Salve também seu link admin: '+window._linkAdmin);}
 function entrarComoAdmin(){ if(!codigoSala) return; document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('painelConvidado').classList.add('hidden'); document.getElementById('painelSorteioGeral').classList.add('hidden'); souAdmin=true; meuId='admin-'+codigoSala; atualizarStatusConexao(); document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; render(); }
 const params=new URLSearchParams(location.search);
-if(params.get('sala')){ document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); codigoSala=params.get('sala'); if(params.get('admin')==='1'){ const saved=localStorage.getItem('bingo_estado_'+codigoSala); if(saved){ estadoSala=JSON.parse(saved); souAdmin=true; meuId='admin-'+codigoSala; meuNome='Admin'; iniciarPeerAdmin(); } } else { iniciarPeerJogador(); document.getElementById('btnCopiarLink').classList.add('hidden'); document.getElementById('painelAdmin').classList.add('hidden'); document.getElementById('painelSorteadosAdmin').classList.add('hidden'); document.getElementById('painelConvidado').classList.remove('hidden'); } document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; }
-function iniciarPeerAdmin(){ if(peer) return; peer=new Peer('bingo-'+codigoSala); peer.on('open', ()=>{ atualizarStatusConexao(); document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('meuNomeDisplay').innerText='Admin'; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; peer.on('connection', conn=>{ conexoes[conn.peer]=conn; conn.on('open', ()=>{ conn.on('data', data=>handleDataAdmin(data, conn)); conn.send({type:'estado', estado:estadoSala}); }); }); render(); }); }
-function iniciarPeerJogador(){ document.getElementById('modalInfo').innerText='Bingo Feliz - Sala: '+codigoSala; peer=new Peer(); peer.on('open', myId=>{ meuId=myId; meuLimiteAnterior=estadoSala.limitePadrao; connAdmin=peer.connect('bingo-'+codigoSala); connAdmin.on('open', ()=>{ atualizarStatusConexao(); connAdmin.on('data', data=>handleDataJogador(data)); }); }); }
-function confirmarNome(){ const nome=document.getElementById('modalInputNome').value.trim(); if(!nome) return; meuNome=nome; document.getElementById('meuNomeDisplay').innerText=nome; document.getElementById('modalNome').classList.add('hidden'); if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:navigator.onLine}); }
-function handleDataAdmin(data, conn){
-  if(data.type==='entrar'){ let j=estadoSala.jogadores.find(x=>x.id===data.id); if(!j){ j={id:data.id, nome:data.nome, marcadorTipo:data.marcadorTipo||'check', cor:data.cor||'#000', limite:null, status:'pendente', cartelas:[], marcados:[], online:data.online!=null?data.online:true}; estadoSala.jogadores.push(j); } else { j.online=data.online; } broadcastEstado(); }
-  if(data.type==='reservar'){ toggleCartelaServer(data.cartId, data.jogId); }
-  if(data.type==='pronto'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.status='pronto'; } broadcastEstado(); }
-  if(data.type==='status'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.online=data.online; broadcastEstado(); } }
-  if(data.type==='marcar'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.marcados=data.marcados; broadcastEstado(); } }
+if(params.get('sala')){
+  document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); codigoSala=params.get('sala');
+  if(params.get('admin')==='1'){
+    const saved=localStorage.getItem('bingo_estado_'+codigoSala); if(saved){ estadoSala=JSON.parse(saved); }
+    souAdmin=true; meuId='admin-'+codigoSala; meuNome='Admin'; iniciarPeerAdmin();
+  } else { iniciarPeerJogador(); document.getElementById('btnCopiarLink').classList.add('hidden'); }
+  document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala;
 }
+function iniciarPeerAdmin(){ if(peer) return; peer=new Peer('bingo-'+codigoSala, PEER_CONFIG); peer.on('open', ()=>{ atualizarStatusConexao(); document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('meuNomeDisplay').innerText='Admin'; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; peer.on('connection', conn=>{ conexoes[conn.peer]=conn; conn.on('open', ()=>{ conn.on('data', data=>handleDataAdmin(data, conn)); conn.send({type:'estado', estado:estadoSala}); }); }); peer.on('disconnected', ()=>peer.reconnect()); render(); }); }
+function iniciarPeerJogador(){
+  document.getElementById('modalInfo').innerText='Sala: '+codigoSala;
+  peer=new Peer(PEER_CONFIG);
+  peer.on('open', myId=>{
+    meuId=myId; meuLimiteAnterior=estadoSala.limitePadrao;
+    connAdmin=peer.connect('bingo-'+codigoSala, {reliable:true});
+    connAdmin.on('open', ()=>{ atualizarStatusConexao(); connAdmin.on('data', data=>handleDataJogador(data)); });
+    connAdmin.on('error', e=>{ alert('Não consegui conectar no Admin. Garanta que o Admin está com a tela aberta e no mesmo link HTTPS.'); console.log(e); });
+  });
+}
+function confirmarNome(){ const nome=document.getElementById('modalInputNome').value.trim(); if(!nome) return; meuNome=nome; document.getElementById('meuNomeDisplay').innerText=nome; document.getElementById('modalNome').classList.add('hidden'); if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:navigator.onLine}); }
+function handleDataAdmin(data, conn){ if(data.type==='entrar'){ let j=estadoSala.jogadores.find(x=>x.id===data.id); if(!j){ j={id:data.id, nome:data.nome, marcadorTipo:data.marcadorTipo||'check', cor:data.cor||'#000', limite:null, status:'pendente', cartelas:[], marcados:[], online:data.online!=null?data.online:true}; estadoSala.jogadores.push(j); } else { j.online=data.online; } broadcastEstado(); } if(data.type==='reservar'){ toggleCartelaServer(data.cartId, data.jogId); } if(data.type==='pronto'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.status='pronto'; } broadcastEstado(); } if(data.type==='status'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.online=data.online; broadcastEstado(); } } if(data.type==='marcar'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.marcados=data.marcados; broadcastEstado(); } } }
 function toggleCartelaServer(cartId, jogId){ const cart=estadoSala.cartelas.find(c=>c.id===cartId); const jog=estadoSala.jogadores.find(j=>j.id===jogId); if(!cart||!jog) return; if(cart.donoId && cart.donoId!==jogId) return; if(cart.donoId===jogId){ cart.donoId=null; cart.donoNome=null; jog.cartelas=jog.cartelas.filter(id=>id!==cartId); } else { if(jog.cartelas.length>=getLimite(jog)) return; cart.donoId=jogId; cart.donoNome=jog.nome; jog.cartelas.push(cartId); } if(modoEscolhaExtra===false){ jog.status='pendente'; } broadcastEstado(); }
 function broadcastEstado(){ localStorage.setItem('bingo_estado_'+codigoSala, JSON.stringify(estadoSala)); Object.values(conexoes).forEach(c=>{ try{ c.send({type:'estado', estado:estadoSala}); }catch(e){} }); render(); }
-function handleDataJogador(data){
-  if(data.type==='estado'){
-    const euAntes=estadoSala.jogadores? estadoSala.jogadores.find(j=>j.id===meuId) : null;
-    const limiteAntes=euAntes? getLimite(euAntes) : meuLimiteAnterior;
-    estadoSala=data.estado;
-    document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome;
-    const euDepois=estadoSala.jogadores.find(j=>j.id===meuId);
-    if(euDepois){
-      const limiteDepois=getLimite(euDepois);
-      if(limiteDepois>limiteAntes){ mostrarToastExtra(limiteDepois-limiteAntes); }
-      meuLimiteAnterior=limiteDepois;
-    }
-    render();
-  }
-}
+function handleDataJogador(data){ if(data.type==='estado'){ const euAntes=estadoSala.jogadores? estadoSala.jogadores.find(j=>j.id===meuId) : null; const limiteAntes=euAntes? getLimite(euAntes) : meuLimiteAnterior; estadoSala=data.estado; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; const euDepois=estadoSala.jogadores.find(j=>j.id===meuId); if(euDepois){ const limiteDepois=getLimite(euDepois); if(limiteDepois>limiteAntes){ mostrarToastExtra(limiteDepois-limiteAntes); } meuLimiteAnterior=limiteDepois; } render(); } }
 function mostrarToastExtra(qtd){ const toast=document.getElementById('toastExtra'); toast.innerText=`🎉 Você ganhou ${qtd} cartela(s) extra!`; toast.classList.remove('hidden'); setTimeout(()=>toast.classList.add('hidden'), 4000); }
 function toggleCartela(id){ if(souAdmin){ toggleCartelaServer(id, meuId); } else { if(connAdmin) connAdmin.send({type:'reservar', cartId:id, jogId:meuId}); } }
-function toggleNumeroManual(num){
-  if(!num || num===0) return;
-  const eu=estadoSala.jogadores.find(j=>j.id===meuId);
-  if(!eu || eu.status!=='pronto') return;
-  eu.marcados=eu.marcados||[];
-  if(eu.marcados.includes(num)){ eu.marcados=eu.marcados.filter(n=>n!==num); }
-  else { eu.marcados.push(num); }
-  if(connAdmin) connAdmin.send({type:'marcar', jogId:meuId, marcados:eu.marcados});
-  render();
-}
+function toggleNumeroManual(num){ if(!num || num===0) return; const eu=estadoSala.jogadores.find(j=>j.id===meuId); if(!eu || eu.status!=='pronto') return; eu.marcados=eu.marcados||[]; if(eu.marcados.includes(num)){ eu.marcados=eu.marcados.filter(n=>n!==num); } else { eu.marcados.push(num); } if(connAdmin) connAdmin.send({type:'marcar', jogId:meuId, marcados:eu.marcados}); render(); }
 function ficarPronto(){ modoEscolhaExtra=false; if(connAdmin) connAdmin.send({type:'pronto', jogId:meuId}); }
-function escolherExtra(){
-  modoEscolhaExtra=true;
-  document.getElementById('colCartelas').classList.remove('hidden');
-  document.getElementById('painelConvidado').classList.remove('hidden');
-  document.getElementById('painelConvidado').innerHTML+=`<div class="mt-3"><button onclick="ficarPronto()" class="w-full bg-[#25D366] text-black rounded-xl py-3.5 font-black">✅ CONFIRMAR E VOLTAR</button></div>`;
-  if(connAdmin){
-    const eu=estadoSala.jogadores.find(j=>j.id===meuId);
-    if(eu){ eu.status='pendente'; connAdmin.send({type:'status', jogId:meuId, online:true}); }
-  }
-  render();
-  document.getElementById('colCartelas').scrollIntoView({behavior:'smooth'});
-}
+function escolherExtra(){ modoEscolhaExtra=true; document.getElementById('colCartelas').classList.remove('hidden'); document.getElementById('painelConvidado').classList.remove('hidden'); document.getElementById('painelConvidado').innerHTML+=`<div class="mt-3"><button onclick="ficarPronto()" class="w-full bg-[#25D366] text-black rounded-xl py-3.5 font-black">✅ CONFIRMAR E VOLTAR</button></div>`; if(connAdmin){ const eu=estadoSala.jogadores.find(j=>j.id===meuId); if(eu){ eu.status='pendente'; connAdmin.send({type:'status', jogId:meuId, online:true}); } } render(); document.getElementById('colCartelas').scrollIntoView({behavior:'smooth'}); }
 function addLimite(jogId, delta){ const j=estadoSala.jogadores.find(x=>x.id===jogId); const atual=j.limite!=null? j.limite : estadoSala.limitePadrao; let n=atual+delta; if(n<1) n=1; if(n>10) n=10; j.limite=n; broadcastEstado(); }
 function iniciarPartida(){ estadoSala.status='jogando'; broadcastEstado(); alert('Partida iniciada!'); }
 function sortearNumero(){ const todos=[...Array(75).keys()].map(n=>n+1); const disp=todos.filter(n=>!estadoSala.numerosSorteados.includes(n)); if(!disp.length){ alert('Acabou'); return; } const num=disp[Math.floor(Math.random()*disp.length)]; estadoSala.numerosSorteados.push(num); broadcastEstado(); }
@@ -270,11 +212,7 @@ function abrirConferirBingo(){ document.getElementById('modalConferir').classLis
 function fecharConferir(){ document.getElementById('modalConferir').classList.add('hidden'); document.getElementById('modalConferir').classList.remove('flex'); }
 function fecharConferirContinuar(){ fecharConferir(); }
 function checarBingo(){ const txt=document.getElementById('inputConferir').value.trim(); if(!txt){ alert('Digite os números'); return; } const nums=txt.split(/\s+/).map(n=>parseInt(n)).filter(n=>!isNaN(n)); const faltam=nums.filter(n=>!estadoSala.numerosSorteados.includes(n)); const res=document.getElementById('resultadoConferir'); res.classList.remove('hidden'); if(faltam.length===0){ res.className='mt-4 p-3 rounded-xl bg-green-100 border-2 border-green-600 text-green-800 font-black'; res.innerHTML=`🎉 BINGO PREMIADO!<br>${nums.join(', ')}`; } else { res.className='mt-4 p-3 rounded-xl bg-red-100 border-2 border-red-600 text-red-800 font-black'; res.innerHTML=`❌ Não premiado<br>Faltam: <span class="bg-red-600 text-white px-2 py-1 rounded">${faltam.join(', ')}</span>`; } }
-function atualizarStatusConexao(){
-  const el=document.getElementById('statusConexao'); if(!el) return;
-  if(navigator.onLine){ el.innerText='CONECTADO'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-green-400 text-black'; }
-  else { el.innerText='SEM INTERNET'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-400 text-black animate-pulse'; }
-}
+function atualizarStatusConexao(){ const el=document.getElementById('statusConexao'); if(!el) return; if(navigator.onLine){ el.innerText='CONECTADO'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-green-400 text-black'; } else { el.innerText='SEM INTERNET'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-400 text-black animate-pulse'; } }
 window.addEventListener('online', ()=>{ atualizarStatusConexao(); if(connAdmin) connAdmin.send({type:'status', jogId:meuId, online:true}); });
 window.addEventListener('offline', ()=>{ atualizarStatusConexao(); if(connAdmin) connAdmin.send({type:'status', jogId:meuId, online:false}); });
 function render(){
@@ -292,13 +230,13 @@ function render(){
       const painel=document.getElementById('painelConvidado');
       painel.classList.remove('hidden');
       const multi=(jogadorAtual.cartelas.length>1);
-      painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length} ${multi?'<span class=text-[10px]>(deslize pro lado)</span>':''} <span class="text-[10px] opacity-60 block">Toque para marcar - número sempre visível</span></h3><div id="minhasCartelasGrande" class="${multi?'carousel':'space-y-4'}"></div><p class="text-center font-black text-green-600 mt-4">✅ VISTO - PRONTO</p>`;
+      painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length} ${multi?'<span class=text-[10px]>(deslize pro lado)</span>':''} <span class="text-[10px] opacity-60 block">Toque no número para marcar - número sempre visível</span></h3><div id="minhasCartelasGrande" class="${multi?'carousel':'space-y-4'}"></div><p class="text-center font-black text-green-600 mt-4">✅ VISTO - PRONTO</p>`;
       const grande=document.getElementById('minhasCartelasGrande');
       if(grande){
         grande.innerHTML='';
         jogadorAtual.cartelas.forEach(id=>{
           const c=estadoSala.cartelas.find(x=>x.id===id); if(!c) return;
-          let html=`<div class="${multi?'carousel-item bg-zinc-50':'bg-zinc-50'} border-2 border-black rounded-xl p-3"><div class="flex justify-between text-xs font-black mb-2"><span>Cartela ${c.numero}</span><span style="color:${eu.cor||'#000'}">${ICONES[eu.marcadorTipo]? `<span style='display:inline-block;width:18px;height:18px;'>${ICONES[eu.marcadorTipo]}</span>` : ''}</span></div><div class="grid grid-cols-5 gap-[1px]">`;
+          let html=`<div class="${multi?'carousel-item bg-zinc-50':'bg-zinc-50'} border-2 border-black rounded-xl p-3"><div class="flex justify-between text-xs font-black mb-2"><span>Cartela ${c.numero}</span><span style="color:${eu.cor||'#000'};width:18px;height:18px;display:inline-block">${ICONES[eu.marcadorTipo]||''}</span></div><div class="grid grid-cols-5 gap-[1px]">`;
           for(let l of ['B','I','N','G','O']) html+=`<div class="bg-black text-white cell-square text-[10px] font-black">${l}</div>`;
           c.grid.forEach(row=>{
             row.forEach(v=>{
@@ -308,7 +246,6 @@ function render(){
               if(isFree){
                 html+=`<div class="border bg-black text-white cell-square flex-col leading-none text-[7px] font-black cursor-default"><span>BINGO</span><span>FELIZ</span></div>`;
               } else {
-                // FIX SEM FUNDO AMARELO, ÍCONE COM OPACIDADE
                 html+=`<div onclick="toggleNumeroManual(${v})" class="border bg-white cell-square text-xs font-bold relative cursor-pointer select-none"><span class="cell-num">${v}</span>${estaMarcado?`<span class="marcador-svg" style="color:${eu.cor||'#000'}">${ICONES[eu.marcadorTipo]||ICONES.check}</span>`:''}</div>`;
               }
             });
@@ -322,68 +259,16 @@ function render(){
       document.getElementById('colCartelas').classList.remove('hidden');
       const painel=document.getElementById('painelConvidado');
       painel.classList.remove('hidden');
-      painel.innerHTML=`
-        <div class="bg-[#25D366] text-black rounded-xl p-3 mb-3 font-black text-center">🎉 Você ganhou cartela extra!<br><span class="text-[11px]">Você tem ${jogadorAtual.cartelas.length}/${getLimite(eu)} - escolha mais ${getLimite(eu)-jogadorAtual.cartelas.length}</span></div>
-        <div id="minhasCartelasLista" class="space-y-2 mb-3"></div>
-        <button onclick="escolherExtra()" class="w-full bg-black text-white rounded-xl py-3.5 font-black">🎯 ESCOLHER CARTELA EXTRA</button>
-        <p class="text-[11px] opacity-60 text-center mt-2">Mantendo suas ${jogadorAtual.cartelas.length} cartela(s) atuais</p>
-      `;
-      const minhasDiv=document.getElementById('minhasCartelasLista');
-      if(minhasDiv){ minhasDiv.innerHTML=''; (jogadorAtual.cartelas||[]).forEach(id=>{ const c=estadoSala.cartelas.find(x=>x.id===id); if(c) minhasDiv.innerHTML+=`<div class='flex justify-between text-xs bg-green-100 border border-green-600 rounded-lg p-2'><span>✅ Cartela ${c.numero} (sua)</span></div>`; }); }
-      grid.innerHTML='';
-      estadoSala.cartelas.forEach(cart=>{
-        const ocupada=cart.donoId && cart.donoId!==meuId;
-        const minha=cart.donoId===meuId;
-        if(ocupada &&!minha) return;
-        const div=document.createElement('div');
-        div.className=`rounded-xl p-2 border-2 cursor-pointer ${minha?'bg-green-100 border-green-600':'bg-zinc-50 border-zinc-200'}`;
-        let html=`<div class='flex justify-between text-[10px] font-black mb-1'><span>${cart.numero}</span><span>${minha?'SUA':'LIVRE'}</span></div><div class='grid grid-cols-5 gap-[1px] text-[9px] font-bold'>`;
-        for(let l of ['B','I','N','G','O']) html+=`<div class='bg-black text-white cell-square'>${l}</div>`;
-        cart.grid.forEach(row=>{ row.forEach(v=>{ const isFree=v==='BINGO FELIZ'; if(isFree){ html+=`<div class='border bg-black text-white cell-square flex-col leading-none text-[6px]'><span>BINGO</span><span>FELIZ</span></div>`; } else { html+=`<div class='border bg-white cell-square'>${v}</div>`; } }); });
-        html+=`</div>`;
-        div.innerHTML=html; div.onclick=()=>toggleCartela(cart.id); grid.appendChild(div);
-      });
+      painel.innerHTML=`<div class="bg-[#25D366] text-black rounded-xl p-3 mb-3 font-black text-center">🎉 Você ganhou cartela extra!<br><span class="text-[11px]">Você tem ${jogadorAtual.cartelas.length}/${getLimite(eu)} - escolha mais ${getLimite(eu)-jogadorAtual.cartelas.length}</span></div><div id="minhasCartelasLista" class="space-y-2 mb-3"></div><button onclick="escolherExtra()" class="w-full bg-black text-white rounded-xl py-3.5 font-black">🎯 ESCOLHER CARTELA EXTRA</button><p class="text-[11px] opacity-60 text-center mt-2">Mantendo suas ${jogadorAtual.cartelas.length} cartela(s) atuais</p>`;
+      const minhasDiv=document.getElementById('minhasCartelasLista'); if(minhasDiv){ minhasDiv.innerHTML=''; (jogadorAtual.cartelas||[]).forEach(id=>{ const c=estadoSala.cartelas.find(x=>x.id===id); if(c) minhasDiv.innerHTML+=`<div class='flex justify-between text-xs bg-green-100 border border-green-600 rounded-lg p-2'><span>✅ Cartela ${c.numero} (sua)</span></div>`; }); }
+      grid.innerHTML=''; estadoSala.cartelas.forEach(cart=>{ const ocupada=cart.donoId && cart.donoId!==meuId; const minha=cart.donoId===meuId; if(ocupada &&!minha) return; const div=document.createElement('div'); div.className=`rounded-xl p-2 border-2 cursor-pointer ${minha?'bg-green-100 border-green-600':'bg-zinc-50 border-zinc-200'}`; let html=`<div class='flex justify-between text-[10px] font-black mb-1'><span>${cart.numero}</span><span>${minha?'SUA':'LIVRE'}</span></div><div class='grid grid-cols-5 gap-[1px] text-[9px] font-bold'>`; for(let l of ['B','I','N','G','O']) html+=`<div class='bg-black text-white cell-square'>${l}</div>`; cart.grid.forEach(row=>{ row.forEach(v=>{ const isFree=v==='BINGO FELIZ'; if(isFree){ html+=`<div class='border bg-black text-white cell-square flex-col leading-none text-[6px]'><span>BINGO</span><span>FELIZ</span></div>`; } else { html+=`<div class='border bg-white cell-square'>${v}</div>`; } }); }); html+=`</div>`; div.innerHTML=html; div.onclick=()=>toggleCartela(cart.id); grid.appendChild(div); });
     } else {
-      document.getElementById('colCartelas').classList.remove('hidden');
-      grid.innerHTML='';
-      estadoSala.cartelas.forEach(cart=>{
-        const ocupada=cart.donoId && cart.donoId!==meuId;
-        const minha=cart.donoId===meuId;
-        const div=document.createElement('div');
-        div.className=`rounded-xl p-2 border-2 cursor-pointer ${minha?'bg-green-100 border-green-600':'bg-zinc-50 border-zinc-200'} ${ocupada?'opacity-40 pointer-events-none':''}`;
-        let html=`<div class='flex justify-between text-[10px] font-black mb-1'><span>${cart.numero}</span><span>${cart.donoNome?cart.donoNome.substring(0,8):'LIVRE'}</span></div><div class='grid grid-cols-5 gap-[1px] text-[9px] font-bold'>`;
-        for(let l of ['B','I','N','G','O']) html+=`<div class='bg-black text-white cell-square'>${l}</div>`;
-        cart.grid.forEach(row=>{ row.forEach(v=>{ const isFree=v==='BINGO FELIZ'; if(isFree){ html+=`<div class='border bg-black text-white cell-square flex-col leading-none text-[6px]'><span>BINGO</span><span>FELIZ</span></div>`; } else { html+=`<div class='border bg-white cell-square'>${v}</div>`; } }); });
-        html+=`</div>`;
-        div.innerHTML=html; div.onclick=()=>toggleCartela(cart.id); grid.appendChild(div);
-      });
-      if(!souAdmin && eu){
-        const painel=document.getElementById('painelConvidado');
-        painel.classList.remove('hidden');
-        if(eu.status!=='pronto'){
-          painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length}/${getLimite(eu)}</h3><div id="minhasCartelasLista" class="space-y-2 mb-3"></div><button id="btnPronto" onclick="ficarPronto()" class="w-full bg-black text-white rounded-xl py-3.5 font-black">✅ ESTOU PRONTO</button>`;
-          const minhasDiv=document.getElementById('minhasCartelasLista');
-          if(minhasDiv){ minhasDiv.innerHTML=''; (jogadorAtual.cartelas||[]).forEach(id=>{ const c=estadoSala.cartelas.find(x=>x.id===id); if(c) minhasDiv.innerHTML+=`<div class='flex justify-between text-xs bg-zinc-100 rounded-lg p-2'><span>Cartela ${c.numero}</span><button onclick='toggleCartela(${c.id})' class='text-red-500 font-bold'>X</button></div>`; }); }
-          const btn=document.getElementById('btnPronto'); if(btn) btn.disabled=(jogadorAtual.cartelas.length===0);
-        }
-      }
+      document.getElementById('colCartelas').classList.remove('hidden'); grid.innerHTML=''; estadoSala.cartelas.forEach(cart=>{ const ocupada=cart.donoId && cart.donoId!==meuId; const minha=cart.donoId===meuId; const div=document.createElement('div'); div.className=`rounded-xl p-2 border-2 cursor-pointer ${minha?'bg-green-100 border-green-600':'bg-zinc-50 border-zinc-200'} ${ocupada?'opacity-40 pointer-events-none':''}`; let html=`<div class='flex justify-between text-[10px] font-black mb-1'><span>${cart.numero}</span><span>${cart.donoNome?cart.donoNome.substring(0,8):'LIVRE'}</span></div><div class='grid grid-cols-5 gap-[1px] text-[9px] font-bold'>`; for(let l of ['B','I','N','G','O']) html+=`<div class='bg-black text-white cell-square'>${l}</div>`; cart.grid.forEach(row=>{ row.forEach(v=>{ const isFree=v==='BINGO FELIZ'; if(isFree){ html+=`<div class='border bg-black text-white cell-square flex-col leading-none text-[6px]'><span>BINGO</span><span>FELIZ</span></div>`; } else { html+=`<div class='border bg-white cell-square'>${v}</div>`; } }); }); html+=`</div>`; div.innerHTML=html; div.onclick=()=>toggleCartela(cart.id); grid.appendChild(div); });
+      if(!souAdmin && eu){ const painel=document.getElementById('painelConvidado'); painel.classList.remove('hidden'); if(eu.status!=='pronto'){ painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length}/${getLimite(eu)}</h3><div id="minhasCartelasLista" class="space-y-2 mb-3"></div><button id="btnPronto" onclick="ficarPronto()" class="w-full bg-black text-white rounded-xl py-3.5 font-black">✅ ESTOU PRONTO</button>`; const minhasDiv=document.getElementById('minhasCartelasLista'); if(minhasDiv){ minhasDiv.innerHTML=''; (jogadorAtual.cartelas||[]).forEach(id=>{ const c=estadoSala.cartelas.find(x=>x.id===id); if(c) minhasDiv.innerHTML+=`<div class='flex justify-between text-xs bg-zinc-100 rounded-lg p-2'><span>Cartela ${c.numero}</span><button onclick='toggleCartela(${c.id})' class='text-red-500 font-bold'>X</button></div>`; }); } const btn=document.getElementById('btnPronto'); if(btn) btn.disabled=(jogadorAtual.cartelas.length===0); } }
     }
   }
-  if(souAdmin){
-    const lj=document.getElementById('listaJogadores'); lj.innerHTML='';
-    estadoSala.jogadores.forEach(j=>{
-      const pronto=j.status==='pronto'; const offline=j.online===false;
-      const corNome=offline? 'bg-yellow-400 text-black animate-pulse' : pronto? 'bg-green-100' : 'bg-red-100';
-      lj.innerHTML+=`<div class='flex items-center justify-between p-2 rounded-xl border-2 ${pronto?'border-green-600':'border-red-400'} ${corNome}'><div class='flex items-center gap-2'><span>${offline?'🟡':pronto?'🟢':'🔴'}</span><span class='text-sm font-bold'>${j.nome} <span style="color:${j.cor||'#000'};display:inline-block;width:16px;height:16px;">${ICONES[j.marcadorTipo]||''}</span></span><span class='text-[10px]'>${j.cartelas.length}/${getLimite(j)} ${pronto?'✅ VISTO':''} ${offline?'(OFFLINE)':''}</span></div><div class='flex gap-1'><button onclick='addLimite("${j.id}",1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>+1 EXTRA</button></div></div>`;
-    });
-    document.getElementById('ultimoNumeroAdmin').innerText=estadoSala.numerosSorteados.length? estadoSala.numerosSorteados[estadoSala.numerosSorteados.length-1] : '--';
-    document.getElementById('totalSorteadosAdmin').innerText=estadoSala.numerosSorteados.length;
-    document.getElementById('bolasSorteadasAdmin').innerHTML=estadoSala.numerosSorteados.map(n=>`<span class='bg-black text-white px-2.5 py-1 rounded-full text-xs font-black'>${n}</span>`).join('');
-  }
-  const ultimo=estadoSala.numerosSorteados.length? estadoSala.numerosSorteados[estadoSala.numerosSorteados.length-1] : '--';
-  const elUlt=document.getElementById('ultimoNumero'); if(elUlt) elUlt.innerText=ultimo;
-  const elUltConv=document.getElementById('ultimoNumeroConvidado'); if(elUltConv) elUltConv.innerText=ultimo;
-  const bolasEl=document.getElementById('bolasSorteadas'); if(bolasEl) bolasEl.innerHTML=estadoSala.numerosSorteados.map(n=>`<span class='bg-white text-black px-2.5 py-1 rounded-full text-xs font-black'>${n}</span>`).join('');
+  if(souAdmin){ const lj=document.getElementById('listaJogadores'); lj.innerHTML=''; estadoSala.jogadores.forEach(j=>{ const pronto=j.status==='pronto'; const offline=j.online===false; const corNome=offline? 'bg-yellow-400 text-black animate-pulse' : pronto? 'bg-green-100' : 'bg-red-100'; lj.innerHTML+=`<div class='flex items-center justify-between p-2 rounded-xl border-2 ${pronto?'border-green-600':'border-red-400'} ${corNome}'><div class='flex items-center gap-2'><span>${offline?'🟡':pronto?'🟢':'🔴'}</span><span class='text-sm font-bold'>${j.nome} <span style="color:${j.cor||'#000'};width:14px;height:14px;display:inline-block">${ICONES[j.marcadorTipo]||''}</span></span><span class='text-[10px]'>${j.cartelas.length}/${getLimite(j)} ${pronto?'✅ VISTO':''} ${offline?'(OFFLINE)':''}</span></div><div class='flex gap-1'><button onclick='addLimite("${j.id}",1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>+1 EXTRA</button></div></div>`; }); document.getElementById('ultimoNumeroAdmin').innerText=estadoSala.numerosSorteados.length? estadoSala.numerosSorteados[estadoSala.numerosSorteados.length-1] : '--'; document.getElementById('totalSorteadosAdmin').innerText=estadoSala.numerosSorteados.length; document.getElementById('bolasSorteadasAdmin').innerHTML=estadoSala.numerosSorteados.map(n=>`<span class='bg-black text-white px-2.5 py-1 rounded-full text-xs font-black'>${n}</span>`).join(''); }
+  const ultimo=estadoSala.numerosSorteados.length? estadoSala.numerosSorteados[estadoSala.numerosSorteados.length-1] : '--'; const elUlt=document.getElementById('ultimoNumero'); if(elUlt) elUlt.innerText=ultimo; const elUltConv=document.getElementById('ultimoNumeroConvidado'); if(elUltConv) elUltConv.innerText=ultimo; const bolasEl=document.getElementById('bolasSorteadas'); if(bolasEl) bolasEl.innerHTML=estadoSala.numerosSorteados.map(n=>`<span class='bg-white text-black px-2.5 py-1 rounded-full text-xs font-black'>${n}</span>`).join('');
 }
 </script>
 </body>
