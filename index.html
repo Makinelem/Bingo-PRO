@@ -51,8 +51,7 @@
 </div>
 <button id="btnCopiarLink" onclick="copiarLinkSala()" class="bg-zinc-800 rounded-2xl px-4 py-3 text-xs font-bold">COPIAR LINK</button>
 </div>
-<div id="toastExtra" class="hidden fixed top-4 left-1/2 -translate-x-1/2 bg-[#25D366] text-black px-6 py-3 rounded-full font-black z-[60] shadow-xl">🎉 Você ganhou cartela(s) extra!</div>
-
+<div id="toastExtra" class="hidden fixed top-4 left-1/2 -translate-x-1/2 bg-[#25D366] text-black px-6 py-3 rounded-full font-black z-[60] shadow-xl"></div>
 <div id="modalNome" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
 <div class="bg-white text-black rounded-[20px] p-6 w-full max-w-md">
 <h2 class="text-2xl font-black mb-1">Entrar no Bingo Feliz</h2>
@@ -76,7 +75,6 @@
 <button onclick="confirmarNome()" class="w-full bg-black text-white rounded-xl py-4 font-black">ENTRAR</button>
 </div>
 </div>
-
 <div class="grid lg:grid-cols-3 gap-4">
 <div id="colCartelas" class="lg:col-span-2"><div class="bg-white text-black rounded-[20px] p-4"><div class="flex justify-between mb-3"><h3 class="font-black">CARTELAS - <span id="totalDisponibilizadas"></span></h3><span id="livresCount" class="bg-zinc-100 px-2 py-1 rounded-full font-bold text-[11px]"></span></div><div id="gridCartelas" class="grid grid-cols-2 gap-2 max-h-[68vh] overflow-auto"></div></div></div>
 <div class="space-y-4">
@@ -115,7 +113,6 @@
 </div>
 </div>
 </div>
-
 <div id="modalConferir" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4">
 <div class="bg-white text-black rounded-[20px] p-6 w-full max-w-lg">
 <h2 class="text-2xl font-black mb-1">🔍 Conferir Bingo</h2>
@@ -127,31 +124,40 @@
 </div>
 </div>
 </div>
-
 <script>
 let peer=null, connAdmin=null, conexoes={}, souAdmin=false, codigoSala=null, meuId=null, meuNome=null, marcadorModal='✅', corIcone='#000000', meuLimiteAnterior=1;
 let estadoSala={nome:'', total:20, limitePadrao:1, cartelas:[], jogadores:[], numerosSorteados:[], status:'lobby'};
 
-// 2. GERAÇÃO CORRIGIDA - LINHA 3 COLUNA N SEMPRE BINGO FELIZ
 function genCartelas(total){
   const cartelas=[];
+  function numerosDaFaixa(min, max, qtd){
+    const arr=[...Array(max-min+1).keys()].map(i=>i+min);
+    return arr.sort(()=>0.5-Math.random()).slice(0,qtd);
+  }
   for(let i=0;i<total;i++){
-    const nums=[...Array(75).keys()].map(n=>n+1).sort(()=>0.5-Math.random()).slice(0,24);
-    const grid=[]; let idx=0;
+    const colB=numerosDaFaixa(1,15,5);
+    const colI=numerosDaFaixa(16,30,5);
+    const colN=numerosDaFaixa(31,45,4);
+    const colG=numerosDaFaixa(46,60,5);
+    const colO=numerosDaFaixa(61,75,5);
+    const grid=[];
+    let idxN=0;
     for(let r=0;r<5;r++){
       let row=[];
-      for(let c=0;c<5;c++){
-        if(r===2 && c===2){ row.push('BINGO FELIZ'); } // LINHA 3 COLUNA N
-        else { row.push(nums[idx++]); }
-      }
+      row.push(colB[r]);
+      row.push(colI[r]);
+      if(r===2){ row.push('BINGO FELIZ'); }
+      else { row.push(colN[idxN++]); }
+      row.push(colG[r]);
+      row.push(colO[r]);
       grid.push(row);
     }
     cartelas.push({id:i+1, numero:String(i+1).padStart(2,'0'), grid, donoId:null, donoNome:null});
   }
   return cartelas;
 }
-function getLimite(j){return j.limite!=null? j.limite : estadoSala.limitePadrao;}
 
+function getLimite(j){return j.limite!=null? j.limite : estadoSala.limitePadrao;}
 function criarSala(){
   const senha=document.getElementById('inputSenha').value;
   if(senha!=='M@ki0110'){ alert('Senha incorreta!'); return; }
@@ -175,32 +181,21 @@ function criarSala(){
 }
 function copiarWhats(){const t=`🎉 Bingo Feliz!\nSala: ${estadoSala.nome}\nLink: ${window._linkSala}`;navigator.clipboard.writeText(t);alert('Link copiado!');}
 function entrarComoAdmin(){ if(!codigoSala) return; document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('painelConvidado').classList.add('hidden'); document.getElementById('painelSorteioGeral').classList.add('hidden'); souAdmin=true; meuId='admin-'+codigoSala; atualizarStatusConexao(); document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; render(); }
-
 const params=new URLSearchParams(location.search);
 if(params.get('sala')){ document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); codigoSala=params.get('sala'); if(params.get('admin')==='1'){ const saved=localStorage.getItem('bingo_estado_'+codigoSala); if(saved){ estadoSala=JSON.parse(saved); souAdmin=true; meuId='admin-'+codigoSala; meuNome='Admin'; iniciarPeerAdmin(); } } else { iniciarPeerJogador(); document.getElementById('btnCopiarLink').classList.add('hidden'); document.getElementById('painelAdmin').classList.add('hidden'); document.getElementById('painelSorteadosAdmin').classList.add('hidden'); document.getElementById('painelConvidado').classList.remove('hidden'); } document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; }
-
 function iniciarPeerAdmin(){ if(peer) return; peer=new Peer('bingo-'+codigoSala); peer.on('open', ()=>{ atualizarStatusConexao(); document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('meuNomeDisplay').innerText='Admin'; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; peer.on('connection', conn=>{ conexoes[conn.peer]=conn; conn.on('open', ()=>{ conn.on('data', data=>handleDataAdmin(data, conn)); conn.send({type:'estado', estado:estadoSala}); }); }); render(); }); }
 function iniciarPeerJogador(){ document.getElementById('modalInfo').innerText='Bingo Feliz - Sala: '+codigoSala; peer=new Peer(); peer.on('open', myId=>{ meuId=myId; meuLimiteAnterior=estadoSala.limitePadrao; connAdmin=peer.connect('bingo-'+codigoSala); connAdmin.on('open', ()=>{ atualizarStatusConexao(); connAdmin.on('data', data=>handleDataJogador(data)); }); }); }
-
 function setMarcadorModal(m){ marcadorModal=m; document.getElementById('marcadorModalDisplay').innerText=m; document.getElementById('marcadorModalDisplay').style.color=corIcone; }
 function setCorIcone(cor){ corIcone=cor; document.getElementById('marcadorModalDisplay').style.color=cor; }
 function confirmarNome(){ const nome=document.getElementById('modalInputNome').value.trim(); if(!nome) return; meuNome=nome; document.getElementById('meuNomeDisplay').innerText=nome; document.getElementById('modalNome').classList.add('hidden'); if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcador:marcadorModal, cor:corIcone, online:navigator.onLine}); }
-
 function handleDataAdmin(data, conn){
   if(data.type==='entrar'){ let j=estadoSala.jogadores.find(x=>x.id===data.id); if(!j){ j={id:data.id, nome:data.nome, marcador:data.marcador||'✅', cor:data.cor||'#000', limite:null, status:'pendente', cartelas:[], online:data.online!=null?data.online:true}; estadoSala.jogadores.push(j); } else { j.online=data.online; } broadcastEstado(); }
   if(data.type==='reservar'){ toggleCartelaServer(data.cartId, data.jogId); }
   if(data.type==='pronto'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.status='pronto'; j.marcador=data.marcador||j.marcador; j.cor=data.cor||j.cor; } broadcastEstado(); }
   if(data.type==='status'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.online=data.online; broadcastEstado(); } }
 }
-
 function toggleCartelaServer(cartId, jogId){ const cart=estadoSala.cartelas.find(c=>c.id===cartId); const jog=estadoSala.jogadores.find(j=>j.id===jogId); if(!cart||!jog) return; if(cart.donoId && cart.donoId!==jogId) return; if(cart.donoId===jogId){ cart.donoId=null; cart.donoNome=null; jog.cartelas=jog.cartelas.filter(id=>id!==cartId); } else { if(jog.cartelas.length>=getLimite(jog)) return; cart.donoId=jogId; cart.donoNome=jog.nome; jog.cartelas.push(cartId); } jog.status='pendente'; broadcastEstado(); }
-
-function broadcastEstado(){
-  localStorage.setItem('bingo_estado_'+codigoSala, JSON.stringify(estadoSala));
-  Object.values(conexoes).forEach(c=>{ try{ c.send({type:'estado', estado:estadoSala}); }catch(e){} });
-  render();
-}
-
+function broadcastEstado(){ localStorage.setItem('bingo_estado_'+codigoSala, JSON.stringify(estadoSala)); Object.values(conexoes).forEach(c=>{ try{ c.send({type:'estado', estado:estadoSala}); }catch(e){} }); render(); }
 function handleDataJogador(data){
   if(data.type==='estado'){
     const euAntes=estadoSala.jogadores? estadoSala.jogadores.find(j=>j.id===meuId) : null;
@@ -210,24 +205,13 @@ function handleDataJogador(data){
     const euDepois=estadoSala.jogadores.find(j=>j.id===meuId);
     if(euDepois){
       const limiteDepois=getLimite(euDepois);
-      if(limiteDepois>limiteAntes){
-        const extra=limiteDepois-limiteAntes;
-        mostrarToastExtra(extra);
-      }
+      if(limiteDepois>limiteAntes){ mostrarToastExtra(limiteDepois-limiteAntes); }
       meuLimiteAnterior=limiteDepois;
     }
     render();
   }
 }
-
-function mostrarToastExtra(qtd){
-  const toast=document.getElementById('toastExtra');
-  toast.innerText=`🎉 Você ganhou ${qtd} cartela(s) extra! Escolha agora`;
-  toast.classList.remove('hidden');
-  setTimeout(()=>toast.classList.add('hidden'), 4000);
-  if(navigator.vibrate) navigator.vibrate(200);
-}
-
+function mostrarToastExtra(qtd){ const toast=document.getElementById('toastExtra'); toast.innerText=`🎉 Você ganhou ${qtd} cartela(s) extra! Escolha agora`; toast.classList.remove('hidden'); setTimeout(()=>toast.classList.add('hidden'), 4000); }
 function toggleCartela(id){ if(souAdmin){ toggleCartelaServer(id, meuId); } else { if(connAdmin) connAdmin.send({type:'reservar', cartId:id, jogId:meuId}); } }
 function ficarPronto(){ if(connAdmin) connAdmin.send({type:'pronto', jogId:meuId, marcador:marcadorModal, cor:corIcone}); }
 function addLimite(jogId, delta){ const j=estadoSala.jogadores.find(x=>x.id===jogId); const atual=j.limite!=null? j.limite : estadoSala.limitePadrao; let n=atual+delta; if(n<1) n=1; if(n>10) n=10; j.limite=n; broadcastEstado(); }
@@ -238,20 +222,13 @@ function abrirConferirBingo(){ document.getElementById('modalConferir').classLis
 function fecharConferir(){ document.getElementById('modalConferir').classList.add('hidden'); document.getElementById('modalConferir').classList.remove('flex'); }
 function fecharConferirContinuar(){ fecharConferir(); }
 function checarBingo(){ const txt=document.getElementById('inputConferir').value.trim(); if(!txt){ alert('Digite os números'); return; } const nums=txt.split(/\s+/).map(n=>parseInt(n)).filter(n=>!isNaN(n)); const faltam=nums.filter(n=>!estadoSala.numerosSorteados.includes(n)); const res=document.getElementById('resultadoConferir'); res.classList.remove('hidden'); if(faltam.length===0){ res.className='mt-4 p-3 rounded-xl bg-green-100 border-2 border-green-600 text-green-800 font-black'; res.innerHTML=`🎉 BINGO PREMIADO!<br>${nums.join(', ')}`; } else { res.className='mt-4 p-3 rounded-xl bg-red-100 border-2 border-red-600 text-red-800 font-black'; res.innerHTML=`❌ Não premiado<br>Faltam: <span class="bg-red-600 text-white px-2 py-1 rounded">${faltam.join(', ')}</span>`; } }
-
-// 5 e 6 - STATUS DE CONEXÃO SEM ZERAR O JOGO
 function atualizarStatusConexao(){
-  const el=document.getElementById('statusConexao');
-  if(!el) return;
-  if(navigator.onLine){
-    el.innerText='CONECTADO'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-green-400 text-black';
-  } else {
-    el.innerText='SEM INTERNET'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-400 text-black animate-pulse';
-  }
+  const el=document.getElementById('statusConexao'); if(!el) return;
+  if(navigator.onLine){ el.innerText='CONECTADO'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-green-400 text-black'; }
+  else { el.innerText='SEM INTERNET'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-400 text-black animate-pulse'; }
 }
 window.addEventListener('online', ()=>{ atualizarStatusConexao(); if(connAdmin) connAdmin.send({type:'status', jogId:meuId, online:true}); });
 window.addEventListener('offline', ()=>{ atualizarStatusConexao(); if(connAdmin) connAdmin.send({type:'status', jogId:meuId, online:false}); });
-
 function render(){
   if(!estadoSala.cartelas) return;
   const eu=souAdmin? null : estadoSala.jogadores.find(j=>j.id===meuId);
@@ -260,7 +237,6 @@ function render(){
   const livres=estadoSala.cartelas.filter(c=>!c.donoId).length;
   document.getElementById('livresCount').innerText=`${livres} livres de ${estadoSala.total}`;
   const grid=document.getElementById('gridCartelas');
-
   if(grid){
     if(!souAdmin && eu && eu.status==='pronto'){
       document.getElementById('colCartelas').classList.add('hidden');
@@ -297,15 +273,12 @@ function render(){
       });
     }
   }
-
   const minhasDiv=document.getElementById('minhasCartelasLista');
   if(minhasDiv && (!eu || eu.status!=='pronto')){ minhasDiv.innerHTML=''; (jogadorAtual.cartelas||[]).forEach(id=>{ const c=estadoSala.cartelas.find(x=>x.id===id); if(c) minhasDiv.innerHTML+=`<div class='flex justify-between text-xs bg-zinc-100 rounded-lg p-2'><span>Cartela ${c.numero}</span><button onclick='toggleCartela(${c.id})' class='text-red-500 font-bold'>X</button></div>`; }); }
-
   if(souAdmin){
     const lj=document.getElementById('listaJogadores'); lj.innerHTML='';
     estadoSala.jogadores.forEach(j=>{
-      const pronto=j.status==='pronto';
-      const offline=j.online===false;
+      const pronto=j.status==='pronto'; const offline=j.online===false;
       const corNome=offline? 'bg-yellow-400 text-black animate-pulse' : pronto? 'bg-green-100' : 'bg-red-100';
       lj.innerHTML+=`<div class='flex items-center justify-between p-2 rounded-xl border-2 ${pronto?'border-green-600':'border-red-400'} ${corNome}'><div class='flex items-center gap-2'><span>${offline?'🟡':pronto?'🟢':'🔴'}</span><span class='text-sm font-bold ${offline?'text-black bg-yellow-400 px-2 rounded':''}'>${j.nome} <span style="color:${j.cor||'#000'}">${j.marcador||''}</span></span><span class='text-[10px]'>${j.cartelas.length}/${getLimite(j)} ${pronto?'✅ VISTO':''} ${offline?'(OFFLINE)':''}</span></div><div class='flex gap-1'><button onclick='addLimite("${j.id}",1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>+1 EXTRA</button></div></div>`;
     });
