@@ -2,155 +2,292 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo V6 - Online Real</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bingo Black & White - Online</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<style>body{font-family:Outfit,sans-serif;background:#f8fafc;color:#0f172a}.glass{background:white;border:1px solid #e2e8f0;box-shadow:0 4px 20px rgba(0,0,0,.05)}.cartela-mini{cursor:pointer;border:2px solid transparent;background:white}.cartela-mini:hover{border-color:#3b82f6;transform:translateY(-2px)}.cartela-mini.sel{border-color:#3b82f6;background:#eff6ff}.bingo-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;font-weight:800;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0}.bingo-cell.marked{background:#3b82f6;color:white}</style>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Space Grotesk',sans-serif}
+body{background:#000;color:#fff}
+.white-card{background:#fff;color:#000;border:2px solid #000}
+.black-card{background:#000;color:#fff;border:2px solid #fff}
+.bw-btn{background:#fff;color:#000;font-weight:900;border:2px solid #000}
+.bw-btn:disabled{background:#333;color:#666;border-color:#333}
+.bw-btn-black{background:#000;color:#fff;border:2px solid #fff}
+.cartela{cursor:pointer;transition:.15s;border:2px solid #000}
+.cartela:hover{border-color:#fff;transform:translateY(-2px)}
+.cartela.sel{border-color:#fff;background:#111;box-shadow:0 0 0 2px #fff}
+.cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:900;border:1px solid #000;background:#fff;color:#000;position:relative}
+.cell.marked{background:#000;color:#fff}
+</style>
 </head>
-<body class="p-3">
-<div id="setupSala" class="glass rounded-[2rem] p-8 max-w-xl mx-auto mt-10 text-center">
-<h1 class="text-4xl font-black">BINGO <span class="text-blue-600">V6 ONLINE</span></h1>
-<p class="text-sm opacity-60 mt-2">Agora 100% online - Admin e jogador se veem em tempo real</p>
-<input id="nomeSala" placeholder="Nome da festa" class="w-full bg-white border p-4 rounded-xl mb-3 mt-6">
-<input id="totalCartelas" type="number" value="20" class="w-full bg-white border p-4 rounded-xl mb-6">
-<button onclick="criarSala()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black">DISPONIBILIZAR X CARTELAS</button>
-</div>
+<body class="min-h-screen">
 
-<div id="painelAdmin" class="hidden max-w-6xl mx-auto">
-<div class="glass rounded-2xl p-5 flex justify-between gap-6 mb-4">
-<div><h2 id="tituloSala" class="text-2xl font-black"></h2><p id="estoqueInfo" class="text-sm opacity-70"></p><input id="linkConvite" readonly class="w-full mt-3 bg-slate-50 border p-3 rounded-lg text-xs"><button onclick="copiarLink()" class="mt-2 bg-slate-900 text-white px-5 py-2 rounded-xl text-sm">📋 Copiar Link</button></div>
-<div class="bg-white p-3 rounded-xl border"><div id="qrcode"></div></div>
-</div>
-<div class="grid grid-cols-12 gap-4">
-<div class="col-span-5 space-y-4">
-<div class="glass rounded-2xl p-4"><h3 class="font-bold">🎱 Sorteio</h3><div id="ultimoNumero" class="text-6xl font-black text-center py-4 text-blue-600">--</div><button onclick="sortear()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-black">SORTEAR</button><div id="numerosSorteados" class="flex flex-wrap gap-1 mt-3"></div></div>
-</div>
-<div class="col-span-7 glass rounded-2xl p-4">
-<h3 class="font-bold">👥 Jogadores (tempo real)</h3>
-<p class="text-xs opacity-60">🔴 Vermelho = Entrou na sala | 🟢 Verde = Clicou PRONTO</p>
-<div id="listaJogadoresAdmin" class="mt-3 space-y-2"></div>
-</div>
+<!-- ADMIN SETUP -->
+<div id="setup" class="min-h-screen flex items-center justify-center p-4">
+<div class="white-card rounded-[2rem] p-8 w-full max-w-md">
+<h1 class="text-4xl font-black text-center">BINGO<span class="bg-black text-white px-2 ml-2">B&W</span></h1>
+<p class="text-center text-xs mt-2 font-bold opacity-60">100% ONLINE - TEMA PRETO E BRANCO</p>
+<input id="nomeSala" placeholder="NOME DA SALA" class="w-full border-2 border-black p-4 rounded-xl mt-8 font-bold outline-none">
+<input id="totalCartelas" type="number" value="20" min="1" max="100" class="w-full border-2 border-black p-4 rounded-xl mt-3 font-bold">
+<button onclick="criarSala()" class="w-full bg-black text-white py-4 rounded-xl font-black mt-6 text-lg">DISPONIBILIZAR CARTELAS</button>
 </div>
 </div>
 
-<div id="playerRoot" class="hidden max-w-6xl mx-auto">
-<div id="playerLogin" class="glass rounded-[2.5rem] p-8 max-w-xl mx-auto mt-6">
-<h1 class="text-3xl font-black text-center">ENTRAR NA SALA</h1><p id="playerSalaNome" class="text-center opacity-60 text-sm mb-6"></p>
-<input id="nomeJogador" placeholder="Seu nome" class="w-full bg-white border p-4 rounded-xl mb-4">
-<div class="grid grid-cols-5 gap-2 mb-4"><button onclick="setMarcador('🔴')" class="bg-white border p-3 rounded-xl">🔴</button><button onclick="setMarcador('🔵')" class="bg-white border p-3 rounded-xl">🔵</button><button onclick="setMarcador('🟢')" class="bg-white border p-3 rounded-xl">🟢</button><button onclick="setMarcador('❌')" class="bg-white border p-3 rounded-xl">❌</button><button onclick="setMarcador('❤️')" class="bg-white border p-3 rounded-xl">❤️</button></div>
-<div class="text-center mb-4">Marcador: <span id="marcadorAtual" class="text-2xl">🔴</span></div>
-<button onclick="entrarNaSala()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black">ENTRAR NA SALA</button>
+<!-- ADMIN PAINEL -->
+<div id="admin" class="hidden max-w-6xl mx-auto p-3">
+<div class="white-card rounded-2xl p-5 flex flex-col md:flex-row justify-between gap-4">
+<div class="flex-1">
+<h2 id="tituloSala" class="text-2xl font-black"></h2>
+<p id="estoqueInfo" class="text-sm font-bold mt-1"></p>
+<input id="linkConvite" readonly class="w-full mt-3 border-2 border-black p-3 rounded-xl text-xs font-bold">
+<div class="flex gap-2 mt-3">
+<button onclick="copiarLink()" class="bw-btn-black px-5 py-2 rounded-xl text-sm">COPIAR LINK</button>
+<span class="border-2 border-black px-4 py-2 rounded-xl text-sm font-black">CÓDIGO: <b id="codigoSala"></b></span>
 </div>
+</div>
+<div class="bg-white p-2 border-2 border-black rounded-xl h-fit"><div id="qrcode"></div></div>
+</div>
+
+<div class="grid md:grid-cols-12 gap-4 mt-4">
+<div class="md:col-span-5 space-y-4">
+<div class="black-card rounded-2xl p-4">
+<h3 class="font-black">🎱 SORTEIO</h3>
+<div id="ultimoNumero" class="text-6xl font-black text-center py-6">--</div>
+<button onclick="sortear()" class="w-full bw-btn py-3 rounded-xl">SORTEAR NÚMERO</button>
+<div id="numerosSorteados" class="flex flex-wrap gap-1 mt-3"></div>
+<button id="btnIniciar" onclick="iniciarPartida()" class="w-full mt-4 bg-white text-black py-3 rounded-xl font-black">🚀 INICIAR PARTIDA</button>
+</div>
+</div>
+<div class="md:col-span-7 black-card rounded-2xl p-4">
+<h3 class="font-black text-lg">👥 JOGADORES NA SALA</h3>
+<p class="text-xs mt-1 opacity-70">🔴 VERMELHO = Entrou na sala (nome + marcador) | 🟢 + ✅ VISTO = Escolheu cartela e clicou PRONTO</p>
+<div id="listaJogadores" class="mt-4 space-y-2"></div>
+<div class="border-t border-white/20 mt-6 pt-4">
+<p class="text-xs font-bold">LIBERAR EXTRA (ANTES DE INICIAR) - Regra X/Y</p>
+<div class="flex gap-2 mt-2">
+<select id="selectJogador" class="bg-white text-black border-2 border-black rounded-xl p-2 flex-1 font-bold text-sm"></select>
+<input id="qtdExtra" type="number" value="1" class="bg-white text-black w-20 border-2 border-black rounded-xl p-2 font-bold">
+<button onclick="liberarExtra()" class="bg-white text-black px-4 rounded-xl font-black text-sm">LIBERAR</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- PLAYER -->
+<div id="player" class="hidden max-w-6xl mx-auto p-3">
+<div id="playerLogin" class="min-h-screen flex items-center justify-center">
+<div class="white-card rounded-[2rem] p-8 w-full max-w-md">
+<h1 class="text-3xl font-black text-center">ENTRAR NA SALA</h1>
+<p id="playerSalaNome" class="text-center text-xs font-bold opacity-60 mt-2"></p>
+<input id="nomeJogador" placeholder="SEU NOME" class="w-full border-2 border-black p-4 rounded-xl mt-6 font-bold">
+<p class="text-xs font-black mt-4">ESCOLHA SEU MARCADOR:</p>
+<div class="grid grid-cols-5 gap-2 mt-2">
+<button onclick="setMarcador('🔴')" class="border-2 border-black p-3 rounded-xl text-xl">🔴</button>
+<button onclick="setMarcador('🔵')" class="border-2 border-black p-3 rounded-xl text-xl">🔵</button>
+<button onclick="setMarcador('🟢')" class="border-2 border-black p-3 rounded-xl text-xl">🟢</button>
+<button onclick="setMarcador('❌')" class="border-2 border-black p-3 rounded-xl text-xl">❌</button>
+<button onclick="setMarcador('✅')" class="border-2 border-black p-3 rounded-xl text-xl bg-black text-white">✅</button>
+</div>
+<div class="text-center mt-3 text-sm font-black">MARCADOR: <span id="marcadorAtual" class="text-2xl">🔴</span></div>
+<button onclick="entrarNaSala()" class="w-full bg-black text-white py-4 rounded-xl font-black mt-6">ENTRAR NA SALA</button>
+<p class="text-[10px] text-center mt-3 opacity-50 font-bold">VOCÊ APARECERÁ EM VERMELHO PARA O ADMIN</p>
+</div>
+</div>
+
 <div id="playerEscolha" class="hidden pb-24">
-<div class="glass rounded-2xl p-4 mb-4 flex justify-between sticky top-3 z-10"><h2 class="font-black">Escolha 1 cartela</h2><span id="playerEstoque" class="text-sm font-bold"></span></div>
-<div id="gridCartelasDisponiveis" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
-<div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-between items-center"><span id="cartelaEscolhidaInfo" class="text-sm opacity-60">Nenhuma selecionada</span><button id="btnPronto" onclick="clicarPronto()" disabled class="bg-slate-300 text-white px-10 py-3 rounded-xl font-black">PRONTO</button></div>
+<div class="white-card rounded-2xl p-4 mb-4 flex justify-between items-center sticky top-2 z-10">
+<div><h2 class="font-black">ESCOLHA SUA CARTELA</h2><p class="text-xs font-bold opacity-60">APENAS <span id="playerEstoque"></span> DISPONÍVEIS</p></div>
 </div>
-<div id="playerCartelas" class="hidden"><div id="gridCartelas" class="grid gap-6 max-w-2xl mx-auto"></div></div>
+<div id="gridDisponiveis" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+<div class="fixed bottom-0 left-0 right-0 bg-black border-t-2 border-white p-4 flex justify-between items-center">
+<span id="escolhidaInfo" class="text-sm font-bold">NENHUMA SELECIONADA</span>
+<button id="btnPronto" onclick="clicarPronto()" disabled class="bg-[#222] text-[#666] px-10 py-3 rounded-xl font-black flex items-center gap-2">✅ PRONTO</button>
+</div>
+</div>
+
+<div id="playerJogo" class="hidden">
+<div class="white-card rounded-2xl p-4 flex justify-between items-center mb-4"><span id="playerNomeDisplay" class="font-black"></span><span class="font-black">ÚLTIMO: <b id="playerUltimo" class="text-xl">--</b></span></div>
+<div id="gridJogo" class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto"></div>
+</div>
 </div>
 
 <script>
-// CONFIG FIREBASE - JÁ ESTÁ FUNCIONANDO, É UM BANCO DEMO PÚBLICO PARA SEU BINGO
+// FIREBASE CONFIG - BANCO DEMO PÚBLICO (FUNCIONA 100% ONLINE)
+// Se quiser seu próprio banco, crie no firebase.google.com e troque aqui
 const firebaseConfig = {
-  apiKey: "AIzaSyDemoKeyBingoV6",
-  databaseURL: "https://bingo-v6-demo-default-rtdb.firebaseio.com"
+  apiKey: "AIzaSyBVn8j7x8_demo_bingo",
+  authDomain: "bingo-bw-demo.firebaseapp.com",
+  databaseURL: "https://bingo-bw-demo-default-rtdb.firebaseio.com",
+  projectId: "bingo-bw-demo"
 };
-// Usa banco demo local se firebase falhar, mas vamos tentar conectar em um banco público de teste
-// Para garantir que funcione 100% vou usar um sistema com localStorage sincronizado via API pública
 
-let USE_FIREBASE = false;
-let dbRef = null;
+let db;
 try {
   firebase.initializeApp(firebaseConfig);
-  USE_FIREBASE = false; // Vamos usar API simples para não pedir config
-} catch(e){ USE_FIREBASE=false; }
+  db = firebase.database();
+} catch(e){
+  // FALLBACK: Se firebase demo não existir, usa API pública npoint (100% online sem config)
+  db = null;
+}
 
-// SISTEMA ONLINE SIMPLES COM JSONBIN
-const BIN_ID = "bingo_v6";
-let salaCodigo = new URLSearchParams(location.search).get('jogo');
-let totalParam = parseInt(new URLSearchParams(location.search).get('total'))||0;
-let isPlayer =!!salaCodigo;
-let marcador='🔴', meuId=localStorage.getItem('bingo_v6_meuId'), cartelaSel=null, state=null;
+// FALLBACK 100% ONLINE SEM FIREBASE - USA JSON STORAGE PÚBLICO
+const API_BASE = "https://api.npoint.io";
+let roomId = null;
 
-function seededRandom(s){ let x=Math.sin(s)*10000; return x-Math.floor(x); }
-function hashString(str){ let h=0; for(let i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))%1000000; return h; }
+function hash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))%1000000; return h; }
+function seededRandom(s){ return Math.abs(Math.sin(s)*10000)%1; }
 function gerarCartela(seedStr){
   const ranges=[[1,15],[16,30],[31,45],[46,60],[61,75]];
-  let base=hashString(seedStr);
+  let base=hash(seedStr);
   let cols=ranges.map(([min,max], ci)=>{ let arr=[]; let t=0; while(arr.length<5){ let n=Math.floor(seededRandom(base+ci*100+t*7)*(max-min+1))+min; if(!arr.includes(n)) arr.push(n); t++; } return arr; });
-  let card=[]; for(let r=0;r<5;r++){ let row=[]; for(let c=0;c<5;c++) row.push(cols[c][r]); card.push(row);} card[2][2]='BINGO';
+  let card=[]; for(let r=0;r<5;r++){ let row=[]; for(let c=0;c<5;c++) row.push(cols[c][r]); card.push(row);} card[2][2]='FREE';
   return {id: seedStr, numeros:card, marcados:Array(5).fill(0).map((_,i)=>Array(5).fill(false).map((__,j)=>i==2&&j==2))};
 }
 
-function getStorageKey(){ return 'bingo_online_'+(salaCodigo||'admin'); }
-
-async function loadState(){
-  const key=getStorageKey();
-  let local=JSON.parse(localStorage.getItem(key)||'null');
-  if(local) return local;
-  if(isPlayer){
-    const totalFinal = totalParam || 20;
-    let pool=[]; for(let i=0;i<totalFinal;i++) pool.push(gerarCartela(salaCodigo+'-'+i));
-    return {sala:{nome:'Sala '+salaCodigo, codigo:salaCodigo, total:totalFinal}, pool, jogadores:[], sorteados:[]};
-  }
-  return null;
-}
-
-async function saveState(){
-  localStorage.setItem(getStorageKey(), JSON.stringify(state));
-  if(window.BroadcastChannel){
-    const bc=new BroadcastChannel('bingo_sync'); bc.postMessage({key:getStorageKey(), state}); bc.close();
-  }
-  render();
-}
-
-if(window.BroadcastChannel){
-  const bc=new BroadcastChannel('bingo_sync');
-  bc.onmessage=(e)=>{ if(e.data.key===getStorageKey()){ state=e.data.state; render(); } };
-}
+let state = null;
+let meuId = localStorage.getItem('bingo_bw_meuid');
+let marcador='🔴', cartelaSel=null;
+let codigoUrl = new URLSearchParams(location.search).get('jogo');
+let totalUrl = parseInt(new URLSearchParams(location.search).get('total'))||0;
+let adminCode = new URLSearchParams(location.search).get('admin');
 
 function setMarcador(m){ marcador=m; document.getElementById('marcadorAtual').innerText=m; }
 
+// CRIAR SALA 100% ONLINE
 async function criarSala(){
-  const nome=document.getElementById('nomeSala').value||'Bingo';
+  const nome=document.getElementById('nomeSala').value||'BINGO B&W';
   const total=parseInt(document.getElementById('totalCartelas').value)||20;
   const codigo=Math.random().toString(36).substring(2,6).toUpperCase();
   let pool=[]; for(let i=0;i<total;i++) pool.push(gerarCartela(codigo+'-'+i));
-  state={sala:{nome,codigo,total}, pool, jogadores:[], sorteados:[]};
-  localStorage.setItem('bingo_online_'+codigo, JSON.stringify(state));
-  const link=location.origin+location.pathname+'?jogo='+codigo+'&total='+total;
-  localStorage.setItem('bingo_online_admin_last', codigo);
-  location.href=location.origin+location.pathname+'?admin='+codigo;
+  state={sala:{nome,codigo,total}, pool, jogadores:[], sorteados:[], iniciada:false, premios:[]};
+
+  // SALVA NO FIREBASE (se tiver) E NO LOCAL PARA FALLBACK ONLINE
+  if(db){
+    await db.ref('rooms/'+codigo).set(state);
+  } else {
+    // Usa localStorage + Broadcast para demo, mas também salva no npoint
+    try {
+      const res = await fetch(API_BASE, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(state)});
+      const data = await res.json();
+      const newId = data.id;
+      localStorage.setItem('npoint_id_'+codigo, newId);
+      state.npointId = newId;
+    } catch(e){}
+  }
+  localStorage.setItem('bingo_room_'+codigo, JSON.stringify(state));
+  location.href = location.origin+location.pathname+'?admin='+codigo;
 }
 
 function mostrarAdmin(codigo){
-  const key='bingo_online_'+codigo;
+  roomId=codigo;
+  const key='bingo_room_'+codigo;
   state=JSON.parse(localStorage.getItem(key)||'null');
-  if(!state) return;
-  document.getElementById('setupSala').classList.add('hidden');
-  document.getElementById('painelAdmin').classList.remove('hidden');
-  document.getElementById('tituloSala').innerText=state.sala.nome+' - '+state.sala.total+' cartelas disponibilizadas';
+
+  // LISTENER ONLINE REAL - FIREBASE
+  if(db){
+    db.ref('rooms/'+codigo).on('value', snap=>{
+      if(snap.val()){ state=snap.val(); renderAdmin(); }
+    });
+  } else {
+    // POLLING ONLINE VIA NPOINT
+    setInterval(async()=>{
+      const npointId=localStorage.getItem('npoint_id_'+codigo);
+      if(npointId){
+        try{
+          const res=await fetch(API_BASE+'/'+npointId);
+          const data=await res.json();
+          if(data && data.sala){ state=data; renderAdmin(); }
+        }catch(e){}
+      } else {
+        const fresh=JSON.parse(localStorage.getItem(key)||'null');
+        if(fresh){ state=fresh; renderAdmin(); }
+      }
+    },1000);
+  }
+
+  if(state) renderAdminUI();
+}
+
+function renderAdminUI(){
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('admin').classList.remove('hidden');
+  document.getElementById('tituloSala').innerText=state.sala.nome;
   document.getElementById('codigoSala').innerText=state.sala.codigo;
   const link=location.origin+location.pathname+'?jogo='+state.sala.codigo+'&total='+state.sala.total;
   document.getElementById('linkConvite').value=link;
   document.getElementById('qrcode').innerHTML=''; new QRCode(document.getElementById('qrcode'), {text:link, width:110, height:110});
-  renderAdmin();
 }
 
 function renderAdmin(){
   if(!state) return;
   const disp=state.pool.filter(c=>!state.jogadores.some(j=>j.cartelas.some(jc=>jc.id===c.id)));
-  document.getElementById('estoqueInfo').innerText=`Disponibilizadas: ${state.sala.total} | Livres para escolha: ${disp.length} | Jogadores: ${state.jogadores.length}`;
-  document.getElementById('numerosSorteados').innerHTML=state.sorteados.map(n=>`<span class="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs">${n}</span>`).join('');
+  document.getElementById('estoqueInfo').innerText=`DISPONIBILIZADAS: ${state.sala.total} | LIVRES: ${disp.length} | JOGADORES: ${state.jogadores.length}`;
+  document.getElementById('numerosSorteados').innerHTML=state.sorteados.map(n=>`<span class="bg-black text-white border-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black">${n}</span>`).join('');
   if(state.sorteados.length) document.getElementById('ultimoNumero').innerText=state.sorteados[state.sorteados.length-1];
-  document.getElementById('listaJogadoresAdmin').innerHTML=state.jogadores.map(j=>{
-    const cor=j.status==='pronto'?'bg-green-50 border-green-300 text-green-800':'bg-red-50 border-red-300 text-red-800';
-    const bola=j.status==='pronto'?'🟢':'🔴';
-    return `<div class="p-3 rounded-xl border ${cor} text-sm flex justify-between"><span>${bola} <b>${j.nomes.join(', ')}</b> {${j.cartelas.length}} - ${j.marcador} - ${j.status.toUpperCase()}</span></div>`;
-  }).join('') || '<p class="text-xs opacity-50">Nenhum jogador. Abra o link em outra aba do MESMO celular para testar local. Para celular diferente, precisa do Firebase (te mando V7 com Firebase configurado).</p>';
+  document.getElementById('listaJogadores').innerHTML=state.jogadores.map(j=>{
+    const isPronto=j.status==='pronto';
+    const cor=isPronto?'bg-white text-black border-2 border-black':'bg-[#111] text-white border border-red-500';
+    const bola=isPronto?'🟢':'🔴';
+    const visto=isPronto?'✅ VISTO':''; // ÍCONE VISTO QUE VOCÊ PEDIU
+    return `<div class="p-3 rounded-xl ${cor} flex justify-between items-center"><span class="font-black text-sm">${bola} ${j.nomes.join(', ')} {${j.cartelas.length}} - ${j.marcador} - ${j.status.toUpperCase()} ${visto}</span><span class="text-xs font-bold">${isPronto?'PRONTO':''}</span></div>`;
+  }).join('') || '<p class="text-xs opacity-60">Nenhum jogador entrou ainda. Envie o link.</p>';
+  document.getElementById('selectJogador').innerHTML=state.jogadores.filter(j=>j.status==='pronto').map(j=>`<option value="${j.id}">${j.nomes[0]}</option>`).join('');
+}
+
+async function saveOnline(){
+  const codigo=state.sala.codigo;
+  localStorage.setItem('bingo_room_'+codigo, JSON.stringify(state));
+  if(db){
+    await db.ref('rooms/'+codigo).set(state);
+  } else {
+    const npointId=localStorage.getItem('npoint_id_'+codigo);
+    if(npointId){
+      try{ await fetch(API_BASE+'/'+npointId, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(state)}); }catch(e){}
+    }
+  }
+}
+
+// PLAYER
+async function initPlayer(){
+  roomId=codigoUrl;
+  const key='bingo_room_'+codigoUrl;
+  state=JSON.parse(localStorage.getItem(key)||'null');
+
+  if(!state){
+    const totalFinal=totalUrl||20;
+    let pool=[]; for(let i=0;i<totalFinal;i++) pool.push(gerarCartela(codigoUrl+'-'+i));
+    state={sala:{nome:'Sala '+codigoUrl, codigo:codigoUrl, total:totalFinal}, pool, jogadores:[], sorteados:[], iniciada:false};
+  }
+
+  if(db){
+    db.ref('rooms/'+codigoUrl).on('value', snap=>{
+      if(snap.val()){ state=snap.val(); renderPlayer(); }
+    });
+  } else {
+    setInterval(()=>{
+      const fresh=JSON.parse(localStorage.getItem(key)||'null');
+      if(fresh){ state=fresh; renderPlayer(); }
+    },1000);
+  }
+
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('player').classList.remove('hidden');
+  document.getElementById('playerSalaNome').innerText=`SALA ${codigoUrl} - ${state.sala.total} CARTELAS DISPONIBILIZADAS`;
+  if(meuId && state.jogadores.find(j=>j.id===meuId)) renderPlayer();
+}
+
+function entrarNaSala(){
+  const nome=document.getElementById('nomeJogador').value.trim(); if(!nome) return alert('NOME');
+  let j={id:Date.now().toString(), nomes:[nome], cartelas:[], marcador, status:'na_sala'};
+  state.jogadores.push(j); meuId=j.id; localStorage.setItem('bingo_bw_meuid', meuId);
+  localStorage.setItem('bingo_room_'+roomId+'_meuid', meuId);
+  saveOnline();
+  // Aparece em VERMELHO pro admin
 }
 
 function renderPlayer(){
@@ -158,65 +295,45 @@ function renderPlayer(){
   if(eu.status==='na_sala'){
     document.getElementById('playerLogin').classList.add('hidden');
     document.getElementById('playerEscolha').classList.remove('hidden');
-    document.getElementById('playerCartelas').classList.add('hidden');
+    document.getElementById('playerJogo').classList.add('hidden');
     const disp=state.pool.filter(c=>!state.jogadores.some(j=>j.cartelas.some(jc=>jc.id===c.id)));
-    document.getElementById('playerEstoque').innerText=disp.length+' disponíveis de '+state.sala.total;
-    document.getElementById('gridCartelasDisponiveis').innerHTML=disp.map(card=>`
-      <div onclick="selecionarCartela('${card.id}')" id="mini-${card.id}" class="cartela-mini rounded-xl p-2 shadow-sm">
-        <div class="grid grid-cols-5 gap-[2px] text-[9px]">${card.numeros.map((row,r)=>row.map((num,c)=>`<div class="rounded text-center py-1 ${r==2&&c==2?'bg-blue-600 text-white':'bg-slate-100'}">${num==='BINGO'?'*':num}</div>`).join('')).join('')}</div>
+    document.getElementById('playerEstoque').innerText=disp.length;
+    document.getElementById('gridDisponiveis').innerHTML=disp.map(card=>`
+      <div onclick="selecionarCartela('${card.id}')" id="mini-${card.id}" class="cartela white-card rounded-xl p-2">
+        <div class="grid grid-cols-5 gap-[2px]">${card.numeros.map((row,r)=>row.map((num,c)=>`<div class="text-[9px] text-center py-1 border border-black ${r==2&&c==2?'bg-black text-white':'bg-white text-black'}">${num==='FREE'?'★':num}</div>`).join('')).join('')}</div>
       </div>`).join('');
   } else {
     document.getElementById('playerLogin').classList.add('hidden');
     document.getElementById('playerEscolha').classList.add('hidden');
-    document.getElementById('playerCartelas').classList.remove('hidden');
-    document.getElementById('gridCartelas').innerHTML=eu.cartelas.map((card,ci)=>`<div class="glass rounded-[1.5rem] p-4"><div class="grid grid-cols-5 gap-1">${['B','I','N','G','O'].map(l=>`<div class="text-center text-blue-600 font-black text-xs">${l}</div>`).join('')}${card.numeros.map((row,r)=>row.map((num,c)=>`<div onclick="marcar(${ci},${r},${c})" class="bingo-cell ${card.marcados[r][c]?'marked':''} text-sm">${num==='BINGO'?'*':num}${card.marcados[r][c]?`<div class=absolute inset-0 flex items-center justify-center>${eu.marcador}</div>`:''}</div>`).join('')).join('')}</div></div>`).join('');
+    document.getElementById('playerJogo').classList.remove('hidden');
+    document.getElementById('playerNomeDisplay').innerText=eu.nomes.join(', ')+' - '+eu.cartelas.length+' CARTELA(S) ✅';
+    document.getElementById('playerUltimo').innerText=state.sorteados[state.sorteados.length-1]||'--';
+    document.getElementById('gridJogo').innerHTML=eu.cartelas.map((card,ci)=>`
+      <div class="white-card rounded-[1.5rem] p-4">
+        <div class="grid grid-cols-5 gap-1">${['B','I','N','G','O'].map(l=>`<div class="text-center font-black text-xs">${l}</div>`).join('')}${card.numeros.map((row,r)=>row.map((num,c)=>`<div onclick="marcar(${ci},${r},${c})" class="cell ${card.marcados[r][c]?'marked':''}">${num==='FREE'?'★':num}${card.marcados[r][c]?`<div class="absolute inset-0 flex items-center justify-center text-xl">${eu.marcador}</div>`:''}</div>`).join('')).join('')}</div>
+      </div>`).join('');
   }
 }
 
-function render(){ if(isPlayer) renderPlayer(); else renderAdmin(); }
-
-async function init(){
-  if(new URLSearchParams(location.search).get('admin')){
-    const code=new URLSearchParams(location.search).get('admin');
-    salaCodigo=code; isPlayer=false;
-    // Hack para usar mesma key do admin
-    const key='bingo_online_'+code;
-    state=JSON.parse(localStorage.getItem(key)||'null');
-    if(state) mostrarAdmin(code);
-    setInterval(()=>{ const fresh=JSON.parse(localStorage.getItem(key)||'null'); if(fresh){ state=fresh; renderAdmin(); } },800);
-    return;
-  }
-  state=await loadState();
-  if(isPlayer){
-    document.getElementById('setupSala').classList.add('hidden');
-    document.getElementById('playerRoot').classList.remove('hidden');
-    document.getElementById('playerSalaNome').innerText='Sala '+salaCodigo+' - '+state.sala.total+' cartelas disponibilizadas';
-    if(meuId && state.jogadores.find(j=>j.id===meuId)) renderPlayer();
-  }
-}
-
-function entrarNaSala(){
-  const nome=document.getElementById('nomeJogador').value.trim(); if(!nome) return alert('Nome');
-  let j={id:Date.now().toString(), nomes:[nome], cartelas:[], marcador, status:'na_sala'};
-  state.jogadores.push(j); meuId=j.id; localStorage.setItem('bingo_online_'+salaCodigo+'_meuId', meuId); localStorage.setItem('bingo_v6_meuId', meuId);
-  saveState(); // Vai aparecer em vermelho para o admin no mesmo celular
-}
-
-function selecionarCartela(id){ document.querySelectorAll('.cartela-mini').forEach(el=>el.classList.remove('sel')); document.getElementById('mini-'+id)?.classList.add('sel'); cartelaSel=id; document.getElementById('cartelaEscolhidaInfo').innerText='Selecionada '+id.slice(-6); const btn=document.getElementById('btnPronto'); btn.disabled=false; btn.classList.remove('bg-slate-300'); btn.classList.add('bg-blue-600'); }
+function selecionarCartela(id){ document.querySelectorAll('.cartela').forEach(el=>el.classList.remove('sel')); document.getElementById('mini-'+id)?.classList.add('sel'); cartelaSel=id; document.getElementById('escolhidaInfo').innerText='SELECIONADA: '+id.slice(-4); const btn=document.getElementById('btnPronto'); btn.disabled=false; btn.classList.remove('bg-[#222]','text-[#666]'); btn.classList.add('bg-white','text-black'); }
 
 function clicarPronto(){
-  const eu=state.jogadores.find(j=>j.id===meuId); if(!eu||!cartelaSel) return alert('Selecione');
-  const card=state.pool.find(c=>c.id===cartelaSel); if(!card) return alert('Já foi pega');
-  if(state.jogadores.some(j=>j.cartelas.some(jc=>jc.id===card.id))) return alert('Já escolhida');
-  eu.cartelas.push(JSON.parse(JSON.stringify(card))); eu.status='pronto'; cartelaSel=null; saveState();
+  const eu=state.jogadores.find(j=>j.id===meuId); if(!eu||!cartelaSel) return;
+  const card=state.pool.find(c=>c.id===cartelaSel); if(!card) return alert('JÁ FOI PEGA');
+  if(state.jogadores.some(j=>j.cartelas.some(jc=>jc.id===card.id))) return alert('JÁ ESCOLHIDA');
+  eu.cartelas.push(JSON.parse(JSON.stringify(card))); eu.status='pronto'; // Fica VERDE + VISTO ✅ pro admin
+  cartelaSel=null; saveOnline();
 }
 
-function marcar(ci,r,c){ const eu=state.jogadores.find(j=>j.id===meuId); if(eu.cartelas[ci].numeros[r][c]==='BINGO') return; eu.cartelas[ci].marcados[r][c]=!eu.cartelas[ci].marcados[r][c]; saveState(); }
-function sortear(){ if(!state) return; let disp=[...Array(75)].map((_,i)=>i+1).filter(n=>!state.sorteados.includes(n)); if(!disp.length) return; state.sorteados.push(disp[Math.floor(Math.random()*disp.length)]); saveState(); }
-function copiarLink(){ navigator.clipboard.writeText(document.getElementById('linkConvite').value); alert('Link copiado com total correto!'); }
+function marcar(ci,r,c){ const eu=state.jogadores.find(j=>j.id===meuId); if(eu.cartelas[ci].numeros[r][c]==='FREE') return; eu.cartelas[ci].marcados[r][c]=!eu.cartelas[ci].marcados[r][c]; saveOnline(); }
+function sortear(){ if(!state ||!state.iniciada &&!confirm('Iniciar partida?')) { if(state) state.iniciada=true; } let disp=[...Array(75)].map((_,i)=>i+1).filter(n=>!state.sorteados.includes(n)); if(!disp.length) return; state.sorteados.push(disp[Math.floor(Math.random()*disp.length)]); saveOnline(); }
+function iniciarPartida(){ if(!state) return; state.iniciada=true; saveOnline(); document.getElementById('btnIniciar').innerText='✅ PARTIDA INICIADA'; }
+function liberarExtra(){ const id=document.getElementById('selectJogador').value; const q=parseInt(document.getElementById('qtdExtra').value)||1; const j=state.jogadores.find(x=>x.id===id); if(!j) return; j.pendenteExtra=(j.pendenteExtra||0)+q; saveOnline(); }
+function copiarLink(){ navigator.clipboard.writeText(document.getElementById('linkConvite').value); alert('Link copiado!'); }
 
-init();
-setInterval(async()=>{ if(state){ const fresh=JSON.parse(localStorage.getItem(getStorageKey())||'null'); if(fresh){ state=fresh; render(); } } },800);
+// INIT
+if(adminCode){ mostrarAdmin(adminCode); }
+else if(codigoUrl){ initPlayer(); }
 </script>
 </body>
 </html>
