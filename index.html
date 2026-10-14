@@ -3,261 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo Pro V2 - Glass</title>
+<title>Bingo Feliz - Convites</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
-  body{font-family:'Outfit', sans-serif; background: #0f172a; overflow-x:hidden}
- .glass{background: rgba(255,255,255,0.08); backdrop-filter: blur(16px); border:1px solid rgba(255,255,255,0.12)}
- .bingo-cell{aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-weight:900; cursor:pointer; transition:0.2s; position:relative}
- .bingo-cell.marked{transform:scale(0.95)}
- .marker{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.6rem; pointer-events:none}
- .blob{position:fixed; border-radius:50%; filter:blur(80px); opacity:0.5; z-index:-1}
-  @keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(59,130,246,0.6)} 50%{box-shadow:0 0 40px rgba(59,130,246,1)}}
- .pulse-btn{animation:pulse-glow 1.5s infinite}
+ body{background:#0a0f1f; font-family: sans-serif}
+.glass{background:rgba(255,255,255,0.06); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1)}
 </style>
 </head>
-<body class="text-white min-h-screen">
-<div class="blob bg-blue-600 w-[600px] h-[600px] -top-48 -left-48"></div>
-<div class="blob bg-purple-600 w-[500px] h-[500px] -bottom-32 -right-32"></div>
+<body class="text-white min-h-screen p-4">
 
-<div class="max-w-7xl mx-auto p-4">
-  <!-- HEADER -->
-  <div class="flex justify-between items-center glass rounded-2xl p-4 mb-6">
-    <h1 class="text-3xl font-black tracking-tighter">BINGO<span class="text-blue-400">PRO</span> V2</h1>
-    <div class="flex gap-2">
-      <button onclick="setView('admin')" id="btnAdmin" class="px-6 py-2 rounded-full bg-white text-black font-bold">ADMIN</button>
-      <button onclick="setView('player')" id="btnPlayer" class="px-6 py-2 rounded-full glass">JOGADOR</button>
-    </div>
+<div id="adminRoot" class="max-w-6xl mx-auto">
+  <!-- SETUP INICIAL ADMIN -->
+  <div id="setupSala" class="glass rounded-3xl p-8 max-w-2xl mx-auto mt-20 text-center">
+    <h1 class="text-4xl font-black mb-2">BINGO FELIZ</h1>
+    <p class="opacity-60 mb-8">Crie a sala e gere as cartelas para distribuir</p>
+    <input id="nomeSala" placeholder="Nome da festa / jogo" class="w-full bg-black/50 p-4 rounded-xl mb-3">
+    <input id="totalCartelas" type="number" value="100" class="w-full bg-black/50 p-4 rounded-xl mb-6">
+    <button onclick="criarSala()" class="w-full bg-blue-600 py-4 rounded-xl font-black text-xl">CRIAR SALA E GERAR CARTELAS</button>
   </div>
 
-  <!-- ADMIN VIEW -->
-  <div id="viewAdmin" class="grid grid-cols-12 gap-4">
-    <!-- Config -->
-    <div class="col-span-12 lg:col-span-4 space-y-4">
-      <div class="glass rounded-2xl p-5">
-        <h2 class="font-bold text-lg mb-3">🏆 Configurar Prêmios (livre)</h2>
-        <div id="listaPremios" class="space-y-2 mb-3"></div>
-        <div class="flex gap-2">
-          <select id="tipoPremio" class="bg-black/50 rounded-lg p-2 flex-1">
-            <option value="horizontal">Linha Horizontal</option>
-            <option value="vertical">Linha Vertical</option>
-            <option value="diagonal">Diagonal</option>
-            <option value="4cantos">4 Cantos</option>
-          </select>
-          <button onclick="addPremio()" class="bg-blue-600 px-4 rounded-lg font-bold">+ Add</button>
+  <div id="painelAdmin" class="hidden grid grid-cols-12 gap-4">
+    <div class="col-span-12 glass rounded-2xl p-6 flex flex-col lg:flex-row justify-between gap-6">
+      <div>
+        <h2 class="text-2xl font-black" id="tituloSala"></h2>
+        <p class="opacity-60">Estoque: <span id="estoqueInfo"></span></p>
+        <div class="mt-4 flex gap-2">
+          <button onclick="copiarLink()" class="bg-white text-black px-6 py-3 rounded-xl font-bold">📋 Copiar Link do Convite</button>
+          <button onclick="copiarCodigo()" class="glass px-6 py-3 rounded-xl font-bold">Código: <span id="codigoSala"></span></button>
         </div>
-        <div class="mt-3 p-2 bg-blue-600/20 rounded-lg text-sm border border-blue-500/30">Final travado: <b>Cartão Cheio</b></div>
+        <input id="linkConvite" readonly class="w-full mt-3 bg-black/50 p-3 rounded-lg text-xs opacity-70">
       </div>
-
-      <div class="glass rounded-2xl p-5">
-        <h2 class="font-bold mb-3">🎱 Sorteio</h2>
-        <div id="ultimoNumero" class="text-7xl font-black text-center py-6 text-blue-400">--</div>
-        <button onclick="sortear()" class="w-full bg-white text-black py-4 rounded-xl font-black text-xl">SORTEAR NÚMERO</button>
-        <div id="numerosSorteados" class="flex flex-wrap gap-1 mt-4"></div>
-      </div>
+      <div class="bg-white p-3 rounded-xl"><div id="qrcode"></div></div>
     </div>
 
-    <!-- Jogadores e Bingo Check -->
-    <div class="col-span-12 lg:col-span-8 space-y-4">
-      <div class="glass rounded-2xl p-5 bg-yellow-500/10 border-yellow-500/30">
-        <h2 class="font-bold text-yellow-300">⚠️ POSSÍVEIS BINGOS PARA VALIDAR (só admin vê)</h2>
-        <div id="alertasBingo" class="mt-3 space-y-2 text-sm">Nenhum bingo ainda. Aguardando marcações dos jogadores...</div>
+    <!-- Resto do admin igual V2: sorteio, prêmios, jogadores, liberar extra -->
+    <div class="col-span-12 lg:col-span-5 glass rounded-2xl p-5">
+      <h3 class="font-bold mb-3">🏆 Prêmios Livres</h3>
+      <div id="listaPremios"></div>
+      <div class="flex gap-2 mt-3">
+        <select id="tipoPremio" class="bg-black/50 rounded-lg p-2 flex-1"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option><option value="diagonal">Diagonal</option><option value="4cantos">4 Cantos</option></select>
+        <button onclick="addPremio()" class="bg-blue-600 px-4 rounded-lg">+ Add</button>
       </div>
-
+      <div class="mt-6">
+        <h3 class="font-bold">🎱 Sorteio</h3>
+        <div id="ultimoNumero" class="text-6xl font-black text-center py-4 text-blue-400">--</div>
+        <button onclick="sortear()" class="w-full bg-white text-black py-3 rounded-xl font-black">SORTEAR</button>
+        <div id="numerosSorteados" class="flex flex-wrap gap-1 mt-3"></div>
+      </div>
+    </div>
+    <div class="col-span-12 lg:col-span-7 space-y-4">
+      <div class="glass rounded-2xl p-5 bg-yellow-500/10">
+        <h3 class="font-bold text-yellow-300">⚠️ BINGOS PARA VALIDAR (só você vê)</h3>
+        <div id="alertasBingo" class="mt-2 text-sm">Aguardando...</div>
+      </div>
       <div class="glass rounded-2xl p-5">
-        <h2 class="font-bold mb-3">👥 Jogadores (<span id="countJogadores">0</span>)</h2>
-        <div id="listaJogadoresAdmin" class="space-y-3"></div>
-        <div class="mt-6 border-t border-white/10 pt-4">
-          <h3 class="font-bold text-sm mb-2">Liberar cartela extra</h3>
-          <div class="flex gap-2">
-            <select id="selectJogadorExtra" class="bg-black/50 rounded-lg p-2 flex-1"></select>
-            <input id="qtdExtra" type="number" value="1" min="1" class="bg-black/50 w-20 rounded-lg p-2">
-            <button onclick="liberarExtra()" class="bg-green-600 px-4 rounded-lg font-bold">Liberar</button>
-          </div>
+        <h3 class="font-bold">👥 Jogadores / Vendas</h3>
+        <div id="listaJogadoresAdmin" class="mt-3 space-y-2"></div>
+        <div class="mt-4 border-t border-white/10 pt-3 flex gap-2">
+          <select id="selectJogadorExtra" class="bg-black/50 rounded-lg p-2 flex-1"></select>
+          <input id="qtdExtra" type="number" value="1" class="bg-black/50 w-20 rounded-lg p-2">
+          <button onclick="liberarExtra()" class="bg-green-600 px-4 rounded-lg font-bold">Liberar Extra</button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- PLAYER VIEW -->
-  <div id="viewPlayer" class="hidden">
-    <!-- Login Player -->
-    <div id="playerLogin" class="max-w-xl mx-auto glass rounded-[2rem] p-8">
-      <h2 class="text-2xl font-black mb-6">Entrar no Bingo</h2>
-      <input id="nomeJogador" placeholder="Seu nome" class="w-full bg-black/50 rounded-xl p-4 mb-3">
-      <input id="qtdCartelas" type="number" value="1" min="1" max="5" class="w-full bg-black/50 rounded-xl p-4 mb-4" placeholder="Qtd cartelas">
-
-      <p class="text-sm opacity-60 mb-2">Escolha seu marcador:</p>
-      <div class="grid grid-cols-5 gap-2 mb-2">
-        <button onclick="setMarcador('🔴')" class="marcador-btn glass p-3 rounded-xl">🔴</button>
-        <button onclick="setMarcador('🔵')" class="marcador-btn glass p-3 rounded-xl">🔵</button>
-        <button onclick="setMarcador('🟢')" class="marcador-btn glass p-3 rounded-xl">🟢</button>
-        <button onclick="setMarcador('⚫')" class="marcador-btn glass p-3 rounded-xl">⚫</button>
-        <button onclick="setMarcador('🟡')" class="marcador-btn glass p-3 rounded-xl">🟡</button>
-      </div>
-      <div class="grid grid-cols-5 gap-2 mb-6">
-        <button onclick="setMarcador('❌')" class="marcador-btn glass p-3 rounded-xl">❌</button>
-        <button onclick="setMarcador('✅')" class="marcador-btn glass p-3 rounded-xl">✅</button>
-        <button onclick="setMarcador('❤️')" class="marcador-btn glass p-3 rounded-xl">❤️</button>
-        <button onclick="setMarcador('🪙')" class="marcador-btn glass p-3 rounded-xl">🪙</button>
-        <button onclick="setMarcador('⭐')" class="marcador-btn glass p-3 rounded-xl">⭐</button>
-      </div>
-      <div class="text-center mb-4">Marcador atual: <span id="marcadorAtual" class="text-2xl">🔴</span></div>
-      <button onclick="entrarJogo()" class="w-full bg-blue-600 py-4 rounded-xl font-black text-lg">PRONTO - PEGAR CARTELAS</button>
-      <p class="text-xs opacity-50 mt-3 text-center">Admin não pode pegar cartela. Se você for admin, use a aba ADMIN.</p>
-    </div>
-
-    <!-- Bloqueio Extra -->
-    <div id="bloqueioExtra" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-6">
-      <div class="glass rounded-[2rem] p-10 text-center max-w-md w-full pulse-btn border-blue-400">
-        <h2 class="text-4xl font-black mb-4">🎉 NOVA CARTELA DISPONÍVEL!</h2>
-        <p class="opacity-70 mb-6">O admin liberou <span id="qtdNovaCartelaTxt"></span> cartela(s) extra pra você!</p>
-        <input id="segundoNome" placeholder="Segundo nome (opcional) ou manter mesmo nome" class="w-full bg-black/50 rounded-xl p-4 mb-3">
-        <div class="flex gap-2">
-          <button onclick="pegarExtra()" class="flex-1 bg-blue-600 py-4 rounded-xl font-black">PEGAR NOVA CARTELA</button>
-          <button onclick="ignorarExtra()" class="flex-1 glass py-4 rounded-xl font-bold">Ignorar e ficar PRONTO</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Cartelas Player -->
-    <div id="playerCartelas" class="hidden">
-      <div class="flex justify-between items-center mb-6 glass rounded-xl p-4">
-        <h2 class="font-black">Suas Cartelas - <span id="playerNomeDisplay"></span></h2>
-        <div class="text-sm">Sorteado: <span id="playerUltimoSorteado" class="font-black text-blue-400 text-xl">--</span></div>
-      </div>
-      <div id="gridCartelas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </div>
   </div>
 </div>
 
+<div id="playerRoot" class="hidden min-h-screen">
+  <div class="max-w-xl mx-auto">
+    <div id="playerLogin" class="glass rounded-[2rem] p-8 mt-10">
+      <div class="text-center mb-6"><h1 class="text-3xl font-black">BEM-VINDO AO BINGO</h1><p class="opacity-60" id="playerSalaNome"></p><p class="text-xs mt-2 bg-blue-600/20 p-2 rounded-lg">Convite válido - Modo Jogador</p></div>
+      <input id="nomeJogador" placeholder="Seu nome completo" class="w-full bg-black/50 rounded-xl p-4 mb-3">
+      <input id="qtdCartelas" type="number" value="1" min="1" class="w-full bg-black/50 rounded-xl p-4 mb-4">
+      <p class="text-sm opacity-60 mb-2">Marcador:</p>
+      <div class="grid grid-cols-5 gap-2 mb-4"><button onclick="setMarcador('🔴')" class="glass p-3 rounded-xl">🔴</button><button onclick="setMarcador('🔵')" class="glass p-3 rounded-xl">🔵</button><button onclick="setMarcador('🟢')" class="glass p-3 rounded-xl">🟢</button><button onclick="setMarcador('❌')" class="glass p-3 rounded-xl">❌</button><button onclick="setMarcador('❤️')" class="glass p-3 rounded-xl">❤️</button></div>
+      <div class="text-center mb-4">Escolhido: <span id="marcadorAtual">🔴</span></div>
+      <button onclick="entrarJogo()" class="w-full bg-blue-600 py-4 rounded-xl font-black">PRONTO - ENTRAR</button>
+    </div>
+    <div id="bloqueioExtra" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6"><div class="glass rounded-3xl p-10 text-center max-w-sm w-full border-blue-400"><h2 class="text-3xl font-black">🎉 NOVA CARTELA DISPONÍVEL!</h2><input id="segundoNome" placeholder="Segundo nome (opcional)" class="w-full bg-black/50 rounded-xl p-3 mt-6 mb-3"><button onclick="pegarExtra()" class="w-full bg-blue-600 py-4 rounded-xl font-black">PEGAR</button><button onclick="ignorarExtra()" class="w-full mt-2 glass py-3 rounded-xl">Ignorar</button></div></div>
+    <div id="playerCartelas" class="hidden"><div class="glass rounded-xl p-4 flex justify-between mb-4"><span id="playerNomeDisplay"></span><span id="playerUltimoSorteado" class="font-black text-blue-400">--</span></div><div id="gridCartelas" class="grid gap-4"></div></div>
+  </div>
+</div>
+
 <script>
-// ESTADO GLOBAL
-let view = 'admin';
-let marcadorEscolhido = '🔴';
-let meuJogadorId = localStorage.getItem('bingo_meuId') || null;
-let state = JSON.parse(localStorage.getItem('bingo_state') || '{"jogadores":[],"sorteados":[],"premios":[{"id":1,"tipo":"horizontal"},{"id":999,"tipo":"cheio","final":true}]}');
-if(!state.premios) state.premios=[{id:1,tipo:'horizontal'},{id:999,tipo:'cheio',final:true}];
+let state = JSON.parse(localStorage.getItem('bingo_v3')||'null') || {sala:null, cartelasPool:[], jogadores:[], sorteados:[], premios:[{id:999,tipo:'cheio',final:true}]};
+let marcador='🔴'; let meuId=localStorage.getItem('bingo_meuId');
+let codigoAtual = new URLSearchParams(window.location.search).get('jogo');
 
-function save(){ localStorage.setItem('bingo_state', JSON.stringify(state)); render(); }
-function setView(v){ view=v; document.getElementById('viewAdmin').classList.toggle('hidden', v!=='admin'); document.getElementById('viewPlayer').classList.toggle('hidden', v!=='player'); document.getElementById('btnAdmin').className = v==='admin'?'px-6 py-2 rounded-full bg-white text-black font-bold':'px-6 py-2 rounded-full glass'; document.getElementById('btnPlayer').className = v==='player'?'px-6 py-2 rounded-full bg-white text-black font-bold':'px-6 py-2 rounded-full glass'; render(); }
-function setMarcador(m){ marcadorEscolhido=m; document.getElementById('marcadorAtual').innerText=m; document.querySelectorAll('.marcador-btn').forEach(b=>b.classList.remove('bg-blue-600')); event.target.classList.add('bg-blue-600'); }
+function isPlayerLink(){ return!!codigoAtual; }
+if(isPlayerLink()){
+  document.getElementById('adminRoot').classList.add('hidden');
+  document.getElementById('playerRoot').classList.remove('hidden');
+  document.getElementById('playerSalaNome').innerText = 'Sala: '+codigoAtual;
+} else {
+  document.getElementById('adminRoot').classList.remove('hidden');
+  if(state.sala){ mostrarPainelAdmin(); }
+}
 
-// GERAR CARTELA CORRETA
 function gerarCartela(){
-  const ranges = [[1,15],[16,30],[31,45],[46,60],[61,75]];
-  let cols = ranges.map(([min,max])=>{
-    let nums=[]; while(nums.length<5){ let n=Math.floor(Math.random()*(max-min+1))+min; if(!nums.includes(n)) nums.push(n); } return nums;
-  });
-  let card=[]; for(let r=0;r<5;r++){ let row=[]; for(let c=0;c<5;c++) row.push(cols[c][r]); card.push(row); }
-  card[2][2]='BINGO';
-  let marcados = Array(5).fill(0).map(()=>Array(5).fill(false)); marcados[2][2]=true;
-  return {numeros:card, marcados};
+  const ranges=[[1,15],[16,30],[31,45],[46,60],[61,75]];
+  let cols=ranges.map(([min,max])=>{ let n=[]; while(n.length<5){ let v=Math.floor(Math.random()*(max-min+1))+min; if(!n.includes(v)) n.push(v);} return n; });
+  let card=[]; for(let r=0;r<5;r++){ let row=[]; for(let c=0;c<5;c++) row.push(cols[c][r]); card.push(row);} card[2][2]='BINGO';
+  return {numeros:card, marcados:Array(5).fill(0).map(()=>Array(5).fill(false)).map((r,i)=>r.map((c,j)=>i==2&&j==2))};
+}
+function criarSala(){
+  const nome=document.getElementById('nomeSala').value||'Bingo da Família';
+  const total=parseInt(document.getElementById('totalCartelas').value)||100;
+  const codigo=Math.random().toString(36).substring(2,7).toUpperCase();
+  state.sala={nome, codigo, total}; state.cartelasPool=[]; for(let i=0;i<total;i++) state.cartelasPool.push(gerarCartela());
+  state.jogadores=[]; state.sorteados=[]; save(); mostrarPainelAdmin();
+}
+function mostrarPainelAdmin(){
+  document.getElementById('setupSala').classList.add('hidden'); document.getElementById('painelAdmin').classList.remove('hidden');
+  document.getElementById('tituloSala').innerText=state.sala.nome;
+  document.getElementById('codigoSala').innerText=state.sala.codigo;
+  const link = window.location.origin + window.location.pathname + '?jogo='+state.sala.codigo;
+  document.getElementById('linkConvite').value=link;
+  document.getElementById('estoqueInfo').innerText=`${state.cartelasPool.length} disponíveis / ${state.jogadores.reduce((a,j)=>a+j.cartelas.length,0)} vendidas`;
+  document.getElementById('qrcode').innerHTML=''; new QRCode(document.getElementById('qrcode'), {text:link, width:120, height:120});
+  renderAdmin();
+}
+function copiarLink(){ navigator.clipboard.writeText(document.getElementById('linkConvite').value); alert('Link copiado! Manda no WhatsApp dos jogadores'); }
+function copiarCodigo(){ navigator.clipboard.writeText(state.sala.codigo); }
+function save(){ localStorage.setItem('bingo_v3', JSON.stringify(state)); if(!isPlayerLink()) renderAdmin(); else renderPlayer(); }
+function setMarcador(m){ marcador=m; document.getElementById('marcadorAtual').innerText=m; }
+
+// ADMIN FUNCS (igual V2 resumido)
+function addPremio(){ const t=document.getElementById('tipoPremio').value; state.premios.pop(); state.premios.push({id:Date.now(), tipo:t}); state.premios.push({id:999,tipo:'cheio',final:true}); save(); }
+function sortear(){ let disp=[...Array(75)].map((_,i)=>i+1).filter(n=>!state.sorteados.includes(n)); if(!disp.length) return; state.sorteados.push(disp[Math.floor(Math.random()*disp.length)]); save(); }
+function liberarExtra(){ const id=document.getElementById('selectJogadorExtra').value; const q=parseInt(document.getElementById('qtdExtra').value); const j=state.jogadores.find(x=>x.id==id); j.pendenteExtra=(j.pendenteExtra||0)+q; save(); }
+function excluirJogador(id){ if(confirm('Excluir? Devolve cartelas pro estoque')){ const j=state.jogadores.find(x=>x.id==id); state.cartelasPool.push(...j.cartelas); state.jogadores=state.jogadores.filter(x=>x.id!=id); save(); } }
+
+function renderAdmin(){
+  document.getElementById('listaPremios').innerHTML=state.premios.map(p=>`<div class="flex justify-between bg-black/30 p-2 rounded-lg text-sm"><span>${p.final?'🏁 ':''}${p.tipo.toUpperCase()}</span></div>`).join('');
+  document.getElementById('numerosSorteados').innerHTML=state.sorteados.map(n=>`<span class="bg-blue-600 w-7 h-7 rounded-full flex items-center justify-center text-xs">${n}</span>`).join('');
+  if(state.sorteados.length) document.getElementById('ultimoNumero').innerText=state.sorteados[state.sorteados.length-1];
+  document.getElementById('listaJogadoresAdmin').innerHTML=state.jogadores.map(j=>`<div class="flex justify-between bg-black/30 p-3 rounded-xl"><span><b>${j.nomes.join(', ')}</b> {${j.cartelas.length}} - ${j.marcador} ${j.pendenteExtra?`⏳${j.pendenteExtra}`:''}</span><button onclick="excluirJogador('${j.id}')" class="text-red-400">X</button></div>`).join('');
+  document.getElementById('selectJogadorExtra').innerHTML=state.jogadores.map(j=>`<option value="${j.id}">${j.nomes[0]} {${j.cartelas.length}}</option>`).join('');
+  if(state.sala) document.getElementById('estoqueInfo').innerText=`${state.cartelasPool.length} disponíveis / ${state.jogadores.reduce((a,j)=>a+j.cartelas.length,0)} vendidas`;
+  // bingo check
+  let alertHtml=''; state.jogadores.forEach(j=>{ j.cartelas.forEach((card, idx)=>{ state.premios.forEach(p=>{ if(p.final) return; let ok=false; if(p.tipo=='horizontal') ok=card.marcados.some(r=>r.every(m=>m)); if(p.tipo=='vertical') for(let c=0;c<5;c++) if(card.marcados.every(r=>r[c])) ok=true; if(p.tipo=='diagonal') ok=(card.marcados[0][0]&&card.marcados[1][1]&&card.marcados[2][2]&&card.marcados[3][3]&&card.marcados[4][4])||(card.marcados[0][4]&&card.marcados[1][3]&&card.marcados[2][2]&&card.marcados[3][1]&&card.marcados[4][0]); if(p.tipo=='4cantos') ok=card.marcados[0][0]&&card.marcados[0][4]&&card.marcados[4][0]&&card.marcados[4][4]; if(ok) alertHtml+=`<div class="bg-yellow-500/20 p-2 rounded-lg mb-1">⚠️ ${j.nomes.join(', ')} - Cartela ${idx+1} - ${p.tipo}</div>`; }); if(card.marcados.flat().every(m=>m)) alertHtml+=`<div class="bg-green-500/20 p-2 rounded-lg font-black">🏁 CHEIO: ${j.nomes.join(', ')} C${idx+1}</div>`; }); }); document.getElementById('alertasBingo').innerHTML=alertHtml||'Nenhum possível bingo';
 }
 
+// PLAYER FUNCS
 function entrarJogo(){
-  const nome = document.getElementById('nomeJogador').value.trim();
-  const qtd = parseInt(document.getElementById('qtdCartelas').value)||1;
-  if(!nome) return alert('Coloque seu nome');
-  if(nome.toLowerCase()==='admin') return alert('Admin não pode pegar cartela');
-  let jogador = {id:Date.now().toString(), nomes:[nome], cartelas:[], marcador:marcadorEscolhido, pronto:true, pendenteExtra:0};
-  for(let i=0;i<qtd;i++) jogador.cartelas.push(gerarCartela());
-  state.jogadores.push(jogador);
-  meuJogadorId=jogador.id; localStorage.setItem('bingo_meuId', meuJogadorId);
-  save();
-  document.getElementById('playerLogin').classList.add('hidden');
-  document.getElementById('playerCartelas').classList.remove('hidden');
+  const nome=document.getElementById('nomeJogador').value.trim(); const qtd=parseInt(document.getElementById('qtdCartelas').value)||1;
+  if(!nome) return alert('Nome');
+  if(state.cartelasPool.length<qtd) return alert('Acabou o estoque! Fala com o admin');
+  let j={id:Date.now().toString(), nomes:[nome], cartelas:state.cartelasPool.splice(0,qtd), marcador, pendenteExtra:0};
+  state.jogadores.push(j); meuId=j.id; localStorage.setItem('bingo_meuId', meuId); save();
+  document.getElementById('playerLogin').classList.add('hidden'); document.getElementById('playerCartelas').classList.remove('hidden'); renderPlayer();
 }
-
-function render(){
-  // premios
-  document.getElementById('listaPremios').innerHTML = state.premios.map(p=>`<div class="flex justify-between bg-black/30 p-2 rounded-lg text-sm"><span>${p.final?'🏁 FINAL: ':''}${p.tipo.toUpperCase()}</span>${p.final?'':`<button onclick="removePremio(${p.id})" class="text-red-400">X</button>`}</div>`).join('');
-  // jogadores admin
-  document.getElementById('countJogadores').innerText=state.jogadores.length;
-  document.getElementById('listaJogadoresAdmin').innerHTML = state.jogadores.map(j=>{
-    const nomesStr = j.nomes.join(', ');
-    const qtd = j.cartelas.length;
-    const displayNome = j.nomes.length===1? `${j.nomes[0]} {${qtd}}` : nomesStr;
-    return `<div class="flex justify-between items-center bg-black/30 p-3 rounded-xl">
-      <div><b>${displayNome}</b> <span class="opacity-50">| ${qtd} cartela(s) | ${j.marcador}</span><br><span class="text-xs opacity-60">${j.pendenteExtra?`⏳ ${j.pendenteExtra} extra pendente`:''}</span></div>
-      <button onclick="excluirJogador('${j.id}')" class="bg-red-600/80 px-3 py-1 rounded-lg text-sm">Excluir</button>
-    </div>`;
-  }).join('');
-  document.getElementById('selectJogadorExtra').innerHTML = state.jogadores.map(j=>`<option value="${j.id}">${j.nomes[0]} {${j.cartelas.length}}</option>`).join('');
-  // sorteados
-  document.getElementById('numerosSorteados').innerHTML = state.sorteados.map(n=>`<span class="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">${n}</span>`).join('');
-  if(state.sorteados.length) document.getElementById('ultimoNumero').innerText = state.sorteados[state.sorteados.length-1];
-  // alertas bingo - detecção silenciosa
-  checkBingos();
-  // player view
-  if(meuJogadorId){
-    const eu = state.jogadores.find(j=>j.id===meuJogadorId);
-    if(eu){
-      document.getElementById('playerLogin').classList.add('hidden');
-      document.getElementById('playerCartelas').classList.remove('hidden');
-      document.getElementById('playerNomeDisplay').innerText = eu.nomes.join(', ');
-      if(eu.pendenteExtra>0){ document.getElementById('bloqueioExtra').classList.remove('hidden'); document.getElementById('qtdNovaCartelaTxt').innerText=eu.pendenteExtra; }
-      else document.getElementById('bloqueioExtra').classList.add('hidden');
-      document.getElementById('playerUltimoSorteado').innerText = state.sorteados[state.sorteados.length-1]||'--';
-      document.getElementById('gridCartelas').innerHTML = eu.cartelas.map((cartela, idx)=>`
-        <div class="glass rounded-[1.5rem] p-4">
-          <div class="flex justify-between mb-2 text-xs font-bold opacity-60"><span>CARTELA ${idx+1}</span><span>B I N G O</span></div>
-          <div class="grid grid-cols-5 gap-1 bg-black/40 p-2 rounded-xl">
-            ${['B','I','N','G','O'].map(l=>`<div class="text-center font-black text-blue-400 text-sm">${l}</div>`).join('')}
-            ${cartela.numeros.map((row,r)=> row.map((num,c)=>`
-              <div onclick="marcar(${idx},${r},${c})" class="bingo-cell bg-white/5 rounded-lg text-sm ${cartela.marcados[r][c]?'marked bg-blue-600/50':''}">
-                ${num==='BINGO'?'<span class="text-[10px]">BINGO</span>':num}
-                ${cartela.marcados[r][c]?`<div class="marker">${eu.marcador}</div>`:''}
-              </div>`).join('')).join('')}
-          </div>
-        </div>`).join('');
-    }
-  }
-  localStorage.setItem('bingo_state', JSON.stringify(state));
+function renderPlayer(){
+  const eu=state.jogadores.find(j=>j.id==meuId); if(!eu) return;
+  document.getElementById('playerLogin').classList.add('hidden'); document.getElementById('playerCartelas').classList.remove('hidden');
+  document.getElementById('playerNomeDisplay').innerText=eu.nomes.join(', '); document.getElementById('playerUltimoSorteado').innerText=state.sorteados[state.sorteados.length-1]||'--';
+  if(eu.pendenteExtra>0) document.getElementById('bloqueioExtra').classList.remove('hidden'); else document.getElementById('bloqueioExtra').classList.add('hidden');
+  document.getElementById('gridCartelas').innerHTML=eu.cartelas.map((card, idx)=>`<div class="glass rounded-2xl p-3"><div class="grid grid-cols-5 gap-1 bg-black/40 p-2 rounded-xl">${['B','I','N','G','O'].map(l=>`<div class="text-center text-blue-400 font-black text-xs">${l}</div>`).join('')}${card.numeros.map((row,r)=>row.map((num,c)=>`<div onclick="marcar(${idx},${r},${c})" class="aspect-square bg-white/5 rounded-lg flex items-center justify-center text-sm relative ${card.marcados[r][c]?'bg-blue-600/50':''}">${num==='BINGO'?'<span class=text-[9px]>BINGO</span>':num}${card.marcados[r][c]?`<div class="absolute inset-0 flex items-center justify-center text-lg">${eu.marcador}</div>`:''}</div>`).join('')).join('')}</div></div>`).join('');
 }
+function marcar(ci,r,c){ const eu=state.jogadores.find(j=>j.id==meuId); if(eu.cartelas[ci].numeros[r][c]=='BINGO') return; eu.cartelas[ci].marcados[r][c]=!eu.cartelas[ci].marcados[r][c]; save(); }
+function pegarExtra(){ const eu=state.jogadores.find(j=>j.id==meuId); const seg=document.getElementById('segundoNome').value.trim(); if(seg &&!eu.nomes.includes(seg)) eu.nomes.push(seg); if(state.cartelasPool.length < eu.pendenteExtra) return alert('Estoque acabou'); eu.cartelas.push(...state.cartelasPool.splice(0, eu.pendenteExtra)); eu.pendenteExtra=0; save(); }
+function ignorarExtra(){ const eu=state.jogadores.find(j=>j.id==meuId); eu.pendenteExtra=0; save(); }
 
-function marcar(cardIdx,r,c){
-  const eu = state.jogadores.find(j=>j.id===meuJogadorId); if(!eu) return;
-  if(eu.cartelas[cardIdx].numeros[r][c]==='BINGO') return;
-  eu.cartelas[cardIdx].marcados[r][c]=!eu.cartelas[cardIdx].marcados[r][c];
-  save();
-}
-
-function addPremio(){ const tipo=document.getElementById('tipoPremio').value; if(state.premios.find(p=>p.final)) state.premios.pop(); state.premios.push({id:Date.now(), tipo}); state.premios.push({id:999,tipo:'cheio',final:true}); save(); }
-function removePremio(id){ state.premios = state.premios.filter(p=>p.id!==id); save(); }
-function sortear(){ let todos=[...Array(75)].map((_,i)=>i+1); let disp=todos.filter(n=>!state.sorteados.includes(n)); if(!disp.length) return alert('Acabou!'); let n=disp[Math.floor(Math.random()*disp.length)]; state.sorteados.push(n); save(); }
-function excluirJogador(id){ if(confirm('Excluir jogador?')){ state.jogadores=state.jogadores.filter(j=>j.id!==id); if(meuJogadorId===id){ meuJogadorId=null; localStorage.removeItem('bingo_meuId'); location.reload(); } save(); } }
-function liberarExtra(){ const id=document.getElementById('selectJogadorExtra').value; const qtd=parseInt(document.getElementById('qtdExtra').value)||1; const j=state.jogadores.find(j=>j.id===id); if(j){ j.pendenteExtra+=qtd; save(); alert('Liberado! Jogador verá botão NOVA CARTELA DISPONÍVEL!'); } }
-function pegarExtra(){ const eu=state.jogadores.find(j=>j.id===meuJogadorId); const segundo=document.getElementById('segundoNome').value.trim(); if(segundo &&!eu.nomes.includes(segundo)) eu.nomes.push(segundo); for(let i=0;i<eu.pendenteExtra;i++) eu.cartelas.push(gerarCartela()); eu.pendenteExtra=0; document.getElementById('segundoNome').value=''; save(); document.getElementById('bloqueioExtra').classList.add('hidden'); }
-function ignorarExtra(){ const eu=state.jogadores.find(j=>j.id===meuJogadorId); eu.pendenteExtra=0; save(); document.getElementById('bloqueioExtra').classList.add('hidden'); }
-
-function checkBingos(){
-  let html='';
-  state.jogadores.forEach(j=>{
-    j.cartelas.forEach((card, idx)=>{
-      state.premios.forEach(premio=>{
-        if(premio.final) return;
-        let bingo=false;
-        if(premio.tipo==='horizontal') bingo=card.marcados.some(row=>row.every(m=>m));
-        if(premio.tipo==='vertical') for(let c=0;c<5;c++) if(card.marcados.every(r=>r[c])) bingo=true;
-        if(premio.tipo==='diagonal') bingo=(card.marcados[0][0]&&card.marcados[1][1]&&card.marcados[2][2]&&card.marcados[3][3]&&card.marcados[4][4])||(card.marcados[0][4]&&card.marcados[1][3]&&card.marcados[2][2]&&card.marcados[3][1]&&card.marcados[4][0]);
-        if(premio.tipo==='4cantos') bingo=card.marcados[0][0]&&card.marcados[0][4]&&card.marcados[4][0]&&card.marcados[4][4];
-        if(bingo) html+=`<div class="bg-yellow-500/20 border border-yellow-500/40 p-2 rounded-lg">⚠️ POSSÍVEL BINGO: <b>${j.nomes.join(', ')}</b> - Cartela ${idx+1} - ${premio.tipo.toUpperCase()} - <button onclick="confirmarBingo('${j.id}')" class="bg-yellow-500 text-black px-2 rounded font-bold ml-2">Validar e Anunciar</button></div>`;
-      });
-      // cheio
-      let cheio = card.marcados.flat().every(m=>m);
-      if(cheio) html+=`<div class="bg-green-500/20 border border-green-500/50 p-3 rounded-lg font-black">🏁 CARTÃO CHEIO: <b>${j.nomes.join(', ')}</b> - Cartela ${idx+1}</div>`;
-    });
-  });
-  if(html) document.getElementById('alertasBingo').innerHTML=html;
-  else document.getElementById('alertasBingo').innerHTML='Nenhum possível bingo. Jogo rolando...';
-}
-function confirmarBingo(id){ if(confirm('Confirmar bingo e anunciar?')) alert('BINGO VALIDADO! Anuncie no microfone!'); }
-
-setInterval(render, 1500);
-render();
-setView('admin');
+setInterval(()=>{ if(!isPlayerLink()) renderAdmin(); else renderPlayer(); },2000);
+if(state.sala &&!isPlayerLink()) mostrarPainelAdmin();
+if(isPlayerLink() && meuId) renderPlayer();
 </script>
 </body>
 </html>
