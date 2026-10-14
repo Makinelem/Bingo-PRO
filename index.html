@@ -31,7 +31,7 @@
 </head>
 <body class="bg-black text-white min-h-screen">
 
-<!-- OVERLAYS DE ALERTA E FIM DE JOGO -->
+<!-- OVERLAYS DE ALERTA E TELA CHEIA DE FIM DE JOGO -->
 <div id="overlayAlertaPiscar" class="fixed inset-0 z-[100] hidden flex items-center justify-center pointer-events-none">
   <div class="bg-red-600 w-[70vw] h-[70vh] rounded-3xl shadow-2xl flex items-center justify-center alerta-piscar">
     <span class="text-white text-5xl font-black uppercase tracking-wider">⚠️ ATENÇÃO!</span>
@@ -523,7 +523,7 @@ function broadcastEstado(){
   render();
 }
 function handleDataJogador(data){
-  if(data.type==='ping'){ return; }
+  if(data.type==='pong'){ return; }
   if(data.type==='alerta'){ executarEfeitoAlerta(); return; }
   if(data.type==='fim_jogo'){ document.getElementById('overlayFimJogo').classList.remove('hidden'); document.getElementById('overlayFimJogo').classList.add('flex'); return; }
   if(data.type==='nova_partida'){ document.getElementById('overlayFimJogo').classList.add('hidden'); document.getElementById('overlayFimJogo').classList.remove('flex'); }
@@ -643,7 +643,7 @@ function toggleNumeroManual(num){
   const eu=estadoSala.jogadores.find(j=>j.id===meuId);
   if(!eu) return;
   if(eu.cartelas.length > getLimite(eu)){
-    alert('Atenção: O Admin reduziu seu limite (-1 EXTRA). Você deve remover/desistir de uma cartela antes de continuar marcando.');
+    alert('Atenção: O Admin reduziu seu limite (-1 EXTRA). Você deve desistir de uma cartela antes de poder marcar números.');
     mostrarPainelRemoverCartela();
     return;
   }
@@ -672,9 +672,7 @@ function addLimite(jogId, delta){
   const j=estadoSala.jogadores.find(x=>x.id===jogId);
   const atual=j.limite!=null? j.limite : estadoSala.limitePadrao;
   let n=atual+delta; if(n<1) n=1; if(n>10) n=10;
-  if(delta<0 && j.cartelas.length>n){
-    alert('Limite reduzido. O jogador "'+j.nome+'" possui '+j.cartelas.length+' cartela(s) e o novo limite é '+n+'. Ele não conseguirá marcar números até remover/desistir de uma cartela.');
-  }
+  if(delta<0 && j.cartelas.length>n){ alert('Jogador tem '+j.cartelas.length+' cartelas, limite vai para '+n+'. Ele não poderá marcar nenhum número até desistir de uma cartela.'); }
   j.limite=n; broadcastEstado();
 }
 function aprovarPraMim(jogId, cartId){
