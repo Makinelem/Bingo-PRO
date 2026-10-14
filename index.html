@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo Feliz V9</title>
+<title>Bingo Feliz V9.1 - Fix Conexão</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -155,7 +155,6 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 </div>
 </div>
 </div>
-
 <div id="modalCartelasAdmin" class="fixed inset-0 bg-black/90 z-40 hidden items-center justify-center p-4"><div class="bg-white text-black rounded-[20px] p-4 w-full max-w-4xl max-h-[90vh] overflow-auto"><div class="flex justify-between mb-3"><h2 class="font-black">CARTELAS</h2><button onclick="toggleModalCartelasAdmin()" class="bg-black text-white px-3 py-1 rounded-full">X</button></div><div id="gridCartelasAdminModal" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div></div></div>
 <div id="modalPremio" class="fixed inset-0 bg-black/90 z-[70] hidden items-center justify-center p-4"><div class="bg-white text-black rounded-[24px] p-8 w-full max-w-md text-center"><h1 class="text-4xl font-black mb-2">🎉 PARABÉNS!</h1><p class="text-xl font-bold">Você Ganhou!</p><p id="textoPremio" class="text-sm mt-3 opacity-70"></p><button onclick="fecharPremio()" class="mt-6 w-full bg-black text-white rounded-xl py-3 font-black">FECHAR</button></div></div>
 <div id="modalExtraNome" class="fixed inset-0 bg-black/90 z-[65] hidden items-center justify-center p-4"><div class="bg-white text-black rounded-[20px] p-6 w-full max-w-md"><h2 class="text-xl font-black mb-2">Nome da nova cartela</h2><p class="text-xs mb-3">Você tem <span id="nomeAtualExtra"></span>. Essa nova cartela é de quem?</p><input id="inputNomeExtra" class="w-full bg-zinc-100 rounded-xl p-4 font-bold mb-3" placeholder="Ex: Érica"><div class="flex gap-2"><button id="btnExtraOk" onclick="confirmarExtraNome(false)" class="flex-1 bg-black text-white rounded-xl py-3 font-black">Ok!</button><button id="btnExtraPraMim" onclick="confirmarExtraNome(true)" class="flex-1 bg-zinc-200 text-black rounded-xl py-3 font-black">Pra mim</button></div><p id="msgExtraNegado" class="hidden text-xs text-red-600 mt-2 font-bold">Pra mim bloqueado pelo Admin. Dê outro nome.</p></div></div>
@@ -250,7 +249,14 @@ function criarSala(){
     document.getElementById('home-criar').classList.add('hidden');
     document.getElementById('home-link').classList.remove('hidden');
     window._linkSala=link;
-    peer.on('connection', conn=>{ conn.on('open', ()=>{ conexoes[conn.peer]=conn; conn.on('data', data=>handleDataAdmin(data, conn)); conn.on('close', ()=>{ delete conexoes[conn.peer]; broadcastEstado(); }); conn.send({type:'estado', estado:estadoSala}); }); });
+    peer.on('connection', conn=>{
+      conn.on('open', ()=>{
+        conexoes[conn.peer]=conn;
+        conn.on('data', data=>handleDataAdmin(data, conn));
+        conn.on('close', ()=>{ delete conexoes[conn.peer]; broadcastEstado(); });
+        conn.send({type:'estado', estado:estadoSala});
+      });
+    });
   });
 }
 function copiarWhats(){const t=`🎉 Bingo Feliz!\nSala: ${estadoSala.nome}\nNúmero: ${estadoSala.codigo}\nLink: ${window._linkSala}`;navigator.clipboard.writeText(t);alert('Link copiado!');}
@@ -278,7 +284,7 @@ if(params.get('sala')){
     if(sessao){
       try{
         const s=JSON.parse(sessao);
-        meuId=s.meuId||meuId; meuNome=s.nome; marcadorSelecionado=s.marcadorTipo||'check'; corIcone=s.cor||'#000';
+        meuNome=s.nome; marcadorSelecionado=s.marcadorTipo||'check'; corIcone=s.cor||'#000';
         document.getElementById('meuNomeDisplay').innerText=meuNome;
         document.getElementById('modalNome').classList.add('hidden');
         document.getElementById('campoCodigoSala').classList.add('hidden');
@@ -308,19 +314,39 @@ if(params.get('sala')){
     }catch(e){}
   }
 }
-function iniciarPeerAdmin(){ if(peer) return; peer=new Peer('bingo-'+codigoSala); peer.on('open', ()=>{ atualizarStatusConexao(); document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('meuNomeDisplay').innerText='Admin'; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; peer.on('connection', conn=>{ conexoes[conn.peer]=conn; conn.on('open', ()=>{ conn.on('data', data=>handleDataAdmin(data, conn)); conn.send({type:'estado', estado:estadoSala}); }); }); render(); }); }
+function iniciarPeerAdmin(){
+  if(peer && peer.id) return;
+  peer=new Peer('bingo-'+codigoSala);
+  peer.on('open', ()=>{
+    atualizarStatusConexao();
+    document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden');
+    document.getElementById('meuNomeDisplay').innerText='Admin'; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome;
+    peer.on('connection', conn=>{
+      conn.on('open', ()=>{
+        conexoes[conn.peer]=conn;
+        conn.on('data', data=>handleDataAdmin(data, conn));
+        conn.on('close', ()=>{ delete conexoes[conn.peer]; broadcastEstado(); });
+        conn.send({type:'estado', estado:estadoSala});
+      });
+    });
+    render();
+  });
+}
 function iniciarPeerJogador(){
   const sessao=localStorage.getItem('bingo_sessao_'+codigoSala);
   let dados=null; if(sessao){ try{ dados=JSON.parse(sessao); }catch(e){} }
-  if(dados && dados.nome){ document.getElementById('modalInputNome').value=dados.nome; marcadorSelecionado=dados.marcadorTipo||'check'; corIcone=dados.cor||'#000'; renderIconGrid(); atualizarPreview(); }
+  if(dados && dados.nome){
+    document.getElementById('modalInputNome').value=dados.nome;
+    marcadorSelecionado=dados.marcadorTipo||'check'; corIcone=dados.cor||'#000'; renderIconGrid(); atualizarPreview();
+  }
   document.getElementById('modalInfo').innerText='Bingo Feliz - Sala: '+codigoSala;
   document.getElementById('campoCodigoSala').classList.add('hidden');
   peer=new Peer();
   peer.on('open', myId=>{
-    if(!meuId) meuId=myId;
-    else myId=meuId;
+    meuId=myId;
+    if(dados){ localStorage.setItem('bingo_sessao_'+codigoSala, JSON.stringify({meuId:myId, nome:dados.nome||'', marcadorTipo:marcadorSelecionado, cor:corIcone, codigoSala})); }
     meuLimiteAnterior=estadoSala.limitePadrao;
-    connAdmin=peer.connect('bingo-'+codigoSala);
+    connAdmin=peer.connect('bingo-'+codigoSala, {reliable:true});
     connAdmin.on('open', ()=>{
       atualizarStatusConexao();
       connAdmin.on('data', data=>handleDataJogador(data));
@@ -330,7 +356,9 @@ function iniciarPeerJogador(){
         connAdmin.send({type:'entrar', nome:meuNome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:true, reconexao:true});
       }
     });
+    connAdmin.on('error', ()=>{ setTimeout(()=>{ if(!connAdmin.open) iniciarPeerJogador(); }, 2000); });
   });
+  peer.on('disconnected', ()=>{ peer.reconnect(); });
 }
 function confirmarNome(){
   let codigoModal=null;
@@ -358,21 +386,28 @@ function handleDataAdmin(data, conn){
   if(data.type==='entrar'){
     const nomeLower=data.nome.trim().toLowerCase();
     const existe=estadoSala.jogadores.find(x=>x.nome.trim().toLowerCase()===nomeLower && x.id!==data.id);
-    if(existe){ conn.send({type:'erro_nome', msg:'Nome já usado! Escolha outro.'}); return; }
+    if(existe &&!data.reconexao){
+      try{ conn.send({type:'erro_nome', msg:'Nome já usado! Escolha outro.'}); }catch(e){}
+      return;
+    }
     let j=estadoSala.jogadores.find(x=>x.id===data.id);
-    if(!j){ j=estadoSala.jogadores.find(x=>x.nome.trim().toLowerCase()===nomeLower); if(j){ j.id=data.id; j.online=true; } }
-    if(!j){ j={id:data.id, nome:data.nome, marcadorTipo:data.marcadorTipo||'check', cor:data.cor||'#000', limite:null, status:'pendente', cartelas:[], marcados:[], online:true, praMimBloqueado:false}; estadoSala.jogadores.push(j); }
-    else { j.online=true; }
+    if(!j){
+      j=estadoSala.jogadores.find(x=>x.nome.trim().toLowerCase()===nomeLower);
+      if(j){ j.id=data.id; }
+    }
+    if(!j){
+      j={id:data.id, nome:data.nome, marcadorTipo:data.marcadorTipo||'check', cor:data.cor||'#000', limite:null, status:'pendente', cartelas:[], marcados:[], online:true, praMimBloqueado:false};
+      estadoSala.jogadores.push(j);
+    } else { j.online=true; }
+    conexoes[data.id]=conn;
+    conexoes[conn.peer]=conn;
     broadcastEstado();
   }
   if(data.type==='reservar'){ toggleCartelaServer(data.cartId, data.jogId, data.nomeCartela); }
   if(data.type==='pronto'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.status='pronto'; } broadcastEstado(); }
   if(data.type==='status'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.online=data.online; broadcastEstado(); } }
   if(data.type==='marcar'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.marcados=data.marcados; broadcastEstado(); } }
-  if(data.type==='solicitar_pra_mim'){
-    solicitacoesPendentes.push(data);
-    renderSolicitacoes();
-  }
+  if(data.type==='solicitar_pra_mim'){ solicitacoesPendentes.push(data); renderSolicitacoes(); }
   if(data.type==='remover_cartela'){
     const j=estadoSala.jogadores.find(x=>x.id===data.jogId);
     const c=estadoSala.cartelas.find(x=>x.id===data.cartId);
@@ -392,7 +427,13 @@ function toggleCartelaServer(cartId, jogId, nomeCartela){
   if(modoEscolhaExtra===false){ jog.status='pendente'; }
   broadcastEstado();
 }
-function broadcastEstado(){ localStorage.setItem('bingo_estado_'+codigoSala, JSON.stringify(estadoSala)); Object.values(conexoes).forEach(c=>{ try{ c.send({type:'estado', estado:estadoSala}); }catch(e){} }); render(); }
+function broadcastEstado(){
+  localStorage.setItem('bingo_estado_'+codigoSala, JSON.stringify(estadoSala));
+  Object.values(conexoes).forEach(c=>{
+    try{ if(c.open) c.send({type:'estado', estado:estadoSala}); }catch(e){}
+  });
+  render();
+}
 function handleDataJogador(data){
   if(data.type==='estado'){
     const euAntes=estadoSala.jogadores? estadoSala.jogadores.find(j=>j.id===meuId) : null;
@@ -429,8 +470,8 @@ function toggleCartela(id){
 }
 function abrirModalExtraNome(){
   const eu=estadoSala.jogadores? estadoSala.jogadores.find(j=>j.id===meuId) : null;
-  if(!eu) return;
-  document.getElementById('nomeAtualExtra').innerText=eu.nome;
+  if(!eu &&!cartelaExtraPendente) return;
+  document.getElementById('nomeAtualExtra').innerText=eu? eu.nome : meuNome;
   document.getElementById('inputNomeExtra').value='';
   document.getElementById('modalExtraNome').classList.remove('hidden');
   document.getElementById('modalExtraNome').classList.add('flex');
@@ -502,9 +543,7 @@ function addLimite(jogId, delta){
   const j=estadoSala.jogadores.find(x=>x.id===jogId);
   const atual=j.limite!=null? j.limite : estadoSala.limitePadrao;
   let n=atual+delta; if(n<1) n=1; if(n>10) n=10;
-  if(delta<0 && j.cartelas.length>n){
-    alert('Jogador tem '+j.cartelas.length+' cartelas, limite vai para '+n+'. Ele vai escolher qual remover.');
-  }
+  if(delta<0 && j.cartelas.length>n){ alert('Jogador tem '+j.cartelas.length+' cartelas, limite vai para '+n+'. Ele vai escolher qual remover.'); }
   j.limite=n; broadcastEstado();
 }
 function aprovarPraMim(jogId, cartId){
@@ -512,7 +551,6 @@ function aprovarPraMim(jogId, cartId){
   if(j){ j.praMimBloqueado=false; }
   const conn=conexoes[jogId];
   if(conn){ try{ conn.send({type:'aprovado_pra_mim'}); }catch(e){} }
-  // reserva cartela no nome dele
   if(cartId){
     const cart=estadoSala.cartelas.find(c=>c.id===cartId);
     if(cart &&!cart.donoId){ cart.donoId=jogId; cart.donoNome=j.nome; cart.nomeCartela=j.nome; j.cartelas.push(cartId); }
@@ -636,11 +674,9 @@ function render(){
   if(btnCartelas) btnCartelas.innerText=`CARTELAS (${livres})`;
   const btnCartelasHome=document.getElementById('btnCartelasHome');
   if(btnCartelasHome) btnCartelasHome.innerText=`CARTELAS (${livres})`;
-
   const colCartelas=document.getElementById('colCartelas');
   const colContainer=document.getElementById('colCartelasContainer');
   const roleta=document.getElementById('adminRoleta');
-
   if(souAdmin && estadoSala.status==='jogando'){
     if(colCartelas) colCartelas.classList.add('hidden');
     if(roleta) roleta.classList.remove('hidden');
@@ -651,10 +687,8 @@ function render(){
     if(btnCartelas) btnCartelas.classList.add('hidden');
     if(colCartelas) colCartelas.classList.remove('hidden');
   }
-
   const grid=document.getElementById('gridCartelas');
   const podeEscolherExtra = eu && eu.status==='pronto' && jogadorAtual.cartelas.length < getLimite(eu);
-
   const painelGeral=document.getElementById('painelSorteioGeral');
   const painelUlt=document.getElementById('painelUltimoConvidado');
   if(!souAdmin && estadoSala.status==='jogando'){
@@ -667,14 +701,13 @@ function render(){
       else { if(painelGeral) painelGeral.classList.add('hidden'); }
     }
   }
-
   if(grid){
     if(!souAdmin && eu && eu.status==='pronto' &&!modoEscolhaExtra &&!podeEscolherExtra){
       document.getElementById('colCartelasContainer').classList.add('hidden');
       const painel=document.getElementById('painelConvidado');
       painel.classList.remove('hidden');
       const multi=(jogadorAtual.cartelas.length>1);
-      painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length} ${multi?'<span class=text-[10px]>(deslize pro lado)</span>':''} <span class="text-[10px] opacity-60 block">Toque para marcar - número sempre visível</span></h3><div id="minhasCartelasGrande" class="${multi?'carousel':'space-y-4'}"></div><p class="text-center font-black text-green-600 mt-4">✅ VISTO - PRONTO</p>`;
+      painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length} ${multi?'<span class=text-[10px]>(deslize pro lado)</span>':''} <span class="text-[10px] opacity-60 block">Toque para marcar</span></h3><div id="minhasCartelasGrande" class="${multi?'carousel':'space-y-4'}"></div><p class="text-center font-black text-green-600 mt-4">✅ VISTO - PRONTO</p>`;
       const grande=document.getElementById('minhasCartelasGrande');
       if(grande){
         grande.innerHTML='';
@@ -703,11 +736,7 @@ function render(){
       document.getElementById('colCartelas').classList.remove('hidden');
       const painel=document.getElementById('painelConvidado');
       painel.classList.remove('hidden');
-      painel.innerHTML=`
-        <div class="bg-[#25D366] text-black rounded-xl p-3 mb-3 font-black text-center">🎉 Você ganhou cartela extra!<br><span class="text-[11px]">Você tem ${jogadorAtual.cartelas.length}/${getLimite(eu)} - escolha mais ${getLimite(eu)-jogadorAtual.cartelas.length}</span></div>
-        <div id="minhasCartelasLista" class="space-y-2 mb-3"></div>
-        <button onclick="escolherExtra()" class="w-full bg-black text-white rounded-xl py-3.5 font-black">🎯 ESCOLHER CARTELA EXTRA</button>
-      `;
+      painel.innerHTML=`<div class="bg-[#25D366] text-black rounded-xl p-3 mb-3 font-black text-center">🎉 Você ganhou cartela extra!<br><span class="text-[11px]">Você tem ${jogadorAtual.cartelas.length}/${getLimite(eu)} - escolha mais ${getLimite(eu)-jogadorAtual.cartelas.length}</span></div><div id="minhasCartelasLista" class="space-y-2 mb-3"></div><button onclick="escolherExtra()" class="w-full bg-black text-white rounded-xl py-3.5 font-black">🎯 ESCOLHER CARTELA EXTRA</button>`;
       const minhasDiv=document.getElementById('minhasCartelasLista');
       if(minhasDiv){ minhasDiv.innerHTML=''; (jogadorAtual.cartelas||[]).forEach(id=>{ const c=estadoSala.cartelas.find(x=>x.id===id); if(c) minhasDiv.innerHTML+=`<div class='flex justify-between text-xs bg-green-100 border border-green-600 rounded-lg p-2'><span>✅ Cartela ${c.numero} ${c.nomeCartela? '- '+c.nomeCartela:''}</span></div>`; }); }
       grid.innerHTML='';
