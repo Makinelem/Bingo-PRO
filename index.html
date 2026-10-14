@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo Feliz V9.4</title>
+<title>Bingo Feliz V9.3 - Reconexão</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -31,7 +31,7 @@
 </head>
 <body class="bg-black text-white min-h-screen">
 
-<!-- OVERLAY ALERTA JOGADOR -->
+<!-- OVERLAYS DE ALERTA E FIM DE JOGO -->
 <div id="overlayAlertaPiscar" class="fixed inset-0 z-[100] hidden flex items-center justify-center pointer-events-none">
   <div class="bg-red-600 w-[70vw] h-[70vh] rounded-3xl shadow-2xl flex items-center justify-center alerta-piscar">
     <span class="text-white text-5xl font-black uppercase tracking-wider">⚠️ ATENÇÃO!</span>
@@ -41,21 +41,16 @@
   <h1 class="text-6xl font-black mb-4">PREPARE-SE</h1>
   <p class="text-xl font-bold text-zinc-600">A rodada já vai começar!</p>
 </div>
-
-<!-- OVERLAY FIM DE JOGO JOGADOR -->
 <div id="overlayFimJogo" class="fixed inset-0 z-[90] bg-black text-white hidden flex-col items-center justify-center text-center p-8">
   <h1 class="text-4xl md:text-5xl font-black mb-6 leading-tight">Sua participação foi incrível!</h1>
   <p class="text-2xl md:text-3xl font-bold text-yellow-400">Agradecemos por jogar!!! 🎉</p>
 </div>
 
 <div class="max-w-6xl mx-auto p-4">
-
-<!-- TELA HOME / PAINEL INICIAL -->
 <div id="tela-home" class="min-h-[90vh] flex items-center justify-center">
 <div class="bg-white text-black rounded-[24px] p-7 w-full max-w-lg">
 <h1 class="text-4xl font-black">BINGO<span class="bg-black text-white px-2 ml-2">FELIZ</span></h1>
 <p class="text-[11px] font-black opacity-60 mt-2">ÁREA ADMINISTRATIVA</p>
-
 <div id="home-criar">
 <label class="text-[11px] font-black">SENHA DE ACESSO ADMIN</label>
 <input id="inputSenha" type="password" class="w-full bg-zinc-100 rounded-xl p-3.5 mb-3 font-bold border-2 border-black" placeholder="Digite sua senha">
@@ -77,7 +72,6 @@
 </div>
 </div>
 </div>
-
 <div id="home-link" class="hidden">
 <div class="bg-zinc-100 rounded-xl p-4 mb-4">
 <p class="text-[11px] font-black">LINK E NÚMERO PARA CONVIDADOS:</p>
@@ -95,8 +89,6 @@
 </div>
 </div>
 </div>
-
-<!-- TELA PRINCIPAL DA SALA -->
 <div id="tela-sala" class="hidden">
 <div class="flex justify-between gap-3 mb-4">
 <div class="bg-white text-black rounded-2xl px-5 py-3 flex-1 flex justify-between items-center">
@@ -106,11 +98,8 @@
 <button id="btnCartelasAdmin" onclick="toggleModalCartelasAdmin()" class="hidden bg-white text-black rounded-2xl px-4 py-3 text-xs font-black">CARTELAS (0)</button>
 <button id="btnCopiarLink" onclick="copiarLinkSala()" class="bg-zinc-800 rounded-2xl px-4 py-3 text-xs font-bold">COPIAR LINK</button>
 </div>
-
 <div id="solicitacoesExtras" class="hidden bg-yellow-100 text-black rounded-2xl p-4 mb-4"></div>
 <div id="toastExtra" class="hidden fixed top-4 left-1/2 -translate-x-1/2 bg-[#25D366] text-black px-6 py-3 rounded-full font-black z-[60] shadow-xl"></div>
-
-<!-- MODAL NOME / CONFIGURAÇÃO JOGADOR -->
 <div id="modalNome" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
 <div class="bg-white text-black rounded-[20px] p-6 w-full max-w-md">
 <h2 class="text-2xl font-black mb-1">Entrar no Bingo Feliz</h2>
@@ -135,13 +124,10 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 <button onclick="confirmarNome()" class="w-full bg-black text-white rounded-xl py-4 font-black">ENTRAR</button>
 </div>
 </div>
-
 <div class="grid lg:grid-cols-3 gap-4">
 <div id="colCartelasContainer" class="lg:col-span-2">
 <div id="colCartelas"><div class="bg-white text-black rounded-[20px] p-4"><div class="flex justify-between mb-3"><h3 class="font-black">CARTELAS - <span id="totalDisponibilizadas"></span></h3><span id="livresCount" class="bg-zinc-100 px-2 py-1 rounded-full font-bold text-[11px]"></span></div><div id="gridCartelas" class="grid grid-cols-2 gap-2 max-h-[68vh] overflow-auto"></div></div></div>
-
-<!-- TELA DA ROLETA / GLOBO SORTEADOR DO ADMIN -->
-<div id="adminRoleta" class="hidden bg-white text-black rounded-[20px] p-6 text-center">
+<div id="adminRoleta" class="hidden bg-white text-black rounded-[20px] p-6">
 <div class="flex justify-between items-center mb-4 pb-3 border-b">
   <div class="text-left">
     <span class="text-[10px] font-black opacity-60 uppercase block">Configuração da Sala</span>
@@ -149,67 +135,60 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
   </div>
   <div class="flex gap-2">
     <button onclick="toggleModalCartelasAdmin()" class="bg-black text-white rounded-xl px-4 py-2 text-xs font-black">CARTELAS</button>
-    <button onclick="copiarLinkSala()" class="bg-zinc-800 text-white rounded-xl px-4 py-2 text-xs font-black">🔗 LINK</button>
+    <button onclick="copiarLinkSala()" class="bg-zinc-800 text-white rounded-xl px-4 py-2 text-xs font-black">LINK</button>
   </div>
 </div>
-
-<button onclick="abrirConferirBingo()" class="w-full bg-yellow-400 text-black rounded-xl py-3.5 font-black text-base mb-4 shadow">🔍 CONFERIR BINGO</button>
-
+<button onclick="abrirConferirBingo()" class="w-full bg-yellow-400 text-black rounded-xl py-3.5 font-black text-sm mb-4 shadow">🔍 CONFERIR BINGO</button>
+<div class="text-center">
 <h2 class="text-2xl font-black mb-4">🎱 GLOBO SORTEADOR</h2>
 <div id="bolaGirando" class="text-8xl font-black bg-black text-white rounded-full w-40 h-40 flex items-center justify-center mx-auto mb-4">--</div>
-
-<div class="grid grid-cols-2 gap-3 mb-4">
-  <button id="btnGirar" onclick="iniciarGiro()" class="bg-black text-white py-4 rounded-xl font-black w-full text-lg">🎰 GIRAR</button>
-  <button id="btnParar" onclick="pararGiro()" class="hidden bg-red-600 text-white py-4 rounded-xl font-black w-full text-lg">🛑 PARAR</button>
-  <button onclick="sortearNumero()" class="bg-zinc-800 text-white py-4 rounded-xl font-black w-full text-lg">🎲 SORTEAR</button>
+<div class="flex gap-2 mb-3">
+<button id="btnGirar" onclick="iniciarGiro()" class="flex-1 bg-black text-white py-4 rounded-xl font-black">🎰 GIRAR</button>
+<button id="btnParar" onclick="pararGiro()" class="hidden flex-1 bg-red-600 text-white py-4 rounded-xl font-black">🛑 PARAR</button>
+<button onclick="sortearNumero()" class="flex-1 bg-zinc-200 text-black py-4 rounded-xl font-black">🎲 SORTEAR</button>
 </div>
-
-<button onclick="confirmarNovaPartida()" class="w-full bg-red-100 text-red-700 border-2 border-red-400 rounded-xl py-3 font-black text-sm mb-6">🔄 NOVA PARTIDA</button>
-
+<button onclick="confirmarNovaPartida()" class="w-full bg-zinc-100 text-black border-2 border-zinc-300 rounded-xl py-3 font-black text-sm mb-4">🔄 NOVA</button>
+</div>
 <div id="painelSorteadosAdminDentro" class="mt-4 text-left">
 <h3 class="font-black mb-2">🎱 SORTEADOS (<span id="totalSorteadosAdminDentro">0</span>/75)</h3>
 <div id="bolasSorteadasAdminDentro" class="flex flex-wrap gap-1.5"></div>
 </div>
 </div>
 </div>
-
 <div class="space-y-4">
-<div id="painelAdmin" class="hidden bg-white text-black rounded-[20px] p-4">
+<div id="painelAdmin" class="hidden bg-white text-black rounded-[20px] p-4 lg:hidden">
+<h3 class="font-black mb-1">ADMIN - JOGADORES</h3>
+<div id="listaJogadoresMobile" class="space-y-2"></div>
+</div>
+<div id="painelAdminDesktop" class="hidden bg-white text-black rounded-[20px] p-4">
 <h3 class="font-black mb-1">ADMIN - JOGADORES</h3>
 <div id="listaJogadores" class="space-y-2 mb-3"></div>
-<div id="listaJogadoresMobile" class="space-y-2 hidden"></div>
-
-<div id="painelAdminBotoes" class="mt-4 space-y-2">
-  <button onclick="enviarAlertaConvidado()" class="w-full bg-red-600 text-white rounded-xl py-3 font-black text-sm">🚨 ALERTAR CONVIDADOS</button>
-  <button onclick="iniciarPartida()" class="w-full bg-black text-white rounded-xl py-3 font-black text-sm">▶️ INICIAR PARTIDA</button>
+<div id="painelAdminBotoes" class="space-y-2">
+<button onclick="enviarAlertaConvidado()" class="w-full bg-red-600 text-white rounded-xl py-3 font-black text-sm">🚨 ALERTAR</button>
+<button onclick="iniciarPartida()" class="w-full bg-black text-white rounded-xl py-3 font-black text-sm">INICIAR</button>
 </div>
 </div>
-
 <div id="painelSorteadosAdmin" class="hidden bg-white text-black rounded-[20px] p-4">
 <h3 class="font-black mb-2">🎱 SORTEADOS</h3>
 <div id="ultimoNumeroAdmin" class="text-7xl font-black text-center py-4 bg-black text-white rounded-xl mb-3">--</div>
 <p class="text-[11px] opacity-60 mb-2"><span id="totalSorteadosAdmin">0</span>/75</p>
 <div id="bolasSorteadasAdmin" class="flex flex-wrap gap-1.5"></div>
 </div>
-
 <div id="painelConvidado" class="hidden bg-white text-black rounded-[20px] p-4">
 <h3 class="font-black mb-2">MINHAS CARTELAS</h3>
 <div id="minhasCartelasLista" class="space-y-2 mb-3"></div>
 <button id="btnPronto" onclick="ficarPronto()" class="w-full bg-black text-white rounded-xl py-3.5 font-black">✅ ESTOU PRONTO</button>
 <p id="txtPronto" class="hidden text-center font-black text-green-600 mt-2">✅ VISTO - PRONTO</p>
 </div>
-
 <div id="painelRemoverCartela" class="hidden bg-yellow-100 text-black rounded-[20px] p-4">
 <h3 class="font-black mb-2">REMOVER CARTELA</h3>
 <p class="text-xs mb-2">Seu limite diminuiu. Escolha qual cartela remover:</p>
 <div id="listaRemoverCartelas" class="space-y-2"></div>
 </div>
-
 <div id="painelUltimoConvidado" class="hidden bg-[#1a1a1a] border border-zinc-800 rounded-[20px] p-4">
 <h3 class="font-black mb-2 text-zinc-400 text-xs">ÚLTIMO NÚMERO</h3>
 <div id="ultimoNumeroConvidado" class="text-7xl font-black text-center py-6 bg-white text-black rounded-xl">--</div>
 </div>
-
 <div id="painelSorteioGeral" class="bg-[#1a1a1a] border border-zinc-800 rounded-[20px] p-4">
 <div id="ultimoNumero" class="text-7xl font-black text-center py-4 bg-white text-black rounded-xl mb-3">--</div>
 <div id="bolasSorteadas" class="flex flex-wrap gap-1.5"></div>
@@ -218,21 +197,12 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 </div>
 </div>
 </div>
-
-<!-- MODAL CARTELAS ADMIN -->
-<div id="modalCartelasAdmin" class="fixed inset-0 bg-black/90 z-40 hidden items-center justify-center p-4"><div class="bg-white text-black rounded-[20px] p-4 w-full max-w-4xl max-h-[90vh] overflow-auto"><div class="flex justify-between mb-3"><h2 class="font-black">CARTELAS DISPONÍVEIS</h2><button onclick="toggleModalCartelasAdmin()" class="bg-black text-white px-3 py-1 rounded-full">X</button></div><div id="gridCartelasAdminModal" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div></div></div>
-
-<!-- MODAL PREMIO JOGADOR -->
+<div id="modalCartelasAdmin" class="fixed inset-0 bg-black/90 z-40 hidden items-center justify-center p-4"><div class="bg-white text-black rounded-[20px] p-4 w-full max-w-4xl max-h-[90vh] overflow-auto"><div class="flex justify-between mb-3"><h2 class="font-black">CARTELAS</h2><button onclick="toggleModalCartelasAdmin()" class="bg-black text-white px-3 py-1 rounded-full">X</button></div><div id="gridCartelasAdminModal" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div></div></div>
 <div id="modalPremio" class="fixed inset-0 bg-black/90 z-[70] hidden items-center justify-center p-4"><div class="bg-white text-black rounded-[24px] p-8 w-full max-w-md text-center"><h1 class="text-4xl font-black mb-2">🎉 PARABÉNS!</h1><p class="text-xl font-bold">Você Ganhou!</p><p id="textoPremio" class="text-sm mt-3 opacity-70"></p><button onclick="fecharPremio()" class="mt-6 w-full bg-black text-white rounded-xl py-3 font-black">FECHAR</button></div></div>
-
-<!-- MODAL NOME DA NOVA CARTELA -->
 <div id="modalExtraNome" class="fixed inset-0 bg-black/90 z-[65] hidden items-center justify-center p-4"><div class="bg-white text-black rounded-[20px] p-6 w-full max-w-md"><h2 class="text-xl font-black mb-2">Nome da nova cartela</h2><p class="text-xs mb-3">Você tem <span id="nomeAtualExtra"></span>. Essa nova cartela é de quem?</p><input id="inputNomeExtra" class="w-full bg-zinc-100 rounded-xl p-4 font-bold mb-3" placeholder="Ex: Érica"><div class="flex gap-2"><button id="btnExtraOk" onclick="confirmarExtraNome(false)" class="flex-1 bg-black text-white rounded-xl py-3 font-black">Ok!</button><button id="btnExtraPraMim" onclick="confirmarExtraNome(true)" class="flex-1 bg-zinc-200 text-black rounded-xl py-3 font-black">Pra mim</button></div><p id="msgExtraNegado" class="hidden text-xs text-red-600 mt-2 font-bold">Pra mim bloqueado pelo Admin. Dê outro nome.</p></div></div>
-
-<!-- MODAL CONFERIR BINGO -->
 <div id="modalConferir" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4">
 <div class="bg-white text-black rounded-[20px] p-6 w-full max-w-lg">
 <h2 class="text-2xl font-black mb-1">🔍 Conferir Bingo</h2>
-<p class="text-xs text-zinc-500 mb-3">Digite os números separados por espaço (Ex: 5 12 33 48 70)</p>
 <textarea id="inputConferir" class="w-full bg-zinc-100 rounded-xl p-4 font-mono text-sm h-28 border-2 border-black" placeholder="Ex: 5 12 33 48 70"></textarea>
 <div id="resultadoConferir" class="mt-4 p-3 rounded-xl hidden"></div>
 <div id="areaPremiar" class="hidden mt-3"></div>
@@ -242,7 +212,6 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 </div>
 </div>
 </div>
-
 <script>
 let peer=null, connAdmin=null, conexoes={}, souAdmin=false, codigoSala=null, meuId=null, meuNome=null, corIcone='#000000', meuLimiteAnterior=1;
 let modoEscolhaExtra=false;
@@ -251,7 +220,6 @@ let estadoSala={nome:'', total:20, limitePadrao:1, cartelas:[], jogadores:[], nu
 let intervaloGiro=null; let cartelaPremiadaTemp=null;
 let cartelaExtraPendente=null; let praMimBloqueado=false; let solicitacoesPendentes=[];
 let tentativasReconectar=0; let intervaloCheckConexao=null;
-
 const ICONES={
 check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l10-10"/></svg>`,
 x:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
@@ -259,7 +227,6 @@ heart:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.5-4.35-9-
 circle:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="9"/></svg>`,
 star:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.5L22 9.3l-5 5 1.2 7L12 18l-6.2 3.3L7 14.3l-5-5 7.1-.8L12 2z"/></svg>`
 };
-
 function renderIconGrid(){
   const grid=document.getElementById('iconGrid'); if(!grid) return;
   grid.innerHTML='';
@@ -277,7 +244,6 @@ function atualizarPreview(){
 }
 function setCorIcone(cor){ corIcone=cor; renderIconGrid(); atualizarPreview(); }
 setTimeout(()=>{ renderIconGrid(); atualizarPreview(); },100);
-
 function genCartelas(total){
   const cartelas=[];
   function numerosDaFaixa(min, max, qtd){
@@ -305,9 +271,7 @@ function genCartelas(total){
   }
   return cartelas;
 }
-
 function getLimite(j){return j.limite!=null? j.limite : estadoSala.limitePadrao;}
-
 function criarSala(){
   const senha=document.getElementById('inputSenha').value;
   if(senha!=='M@ki0110'){ alert('Senha incorreta!'); return; }
@@ -338,21 +302,17 @@ function criarSala(){
     });
   });
 }
-
 function copiarWhats(){const t=`🎉 Bingo Feliz!\nSala: ${estadoSala.nome}\nNúmero: ${estadoSala.codigo}\nLink: ${window._linkSala}`;navigator.clipboard.writeText(t);alert('Link copiado!');}
-
 function entrarComoAdmin(){
   if(!codigoSala) return;
   localStorage.setItem('bingo_admin_sessao', JSON.stringify({codigo:codigoSala, tela:'sala', souAdmin:true}));
-  document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('painelConvidado').classList.add('hidden'); document.getElementById('painelSorteioGeral').classList.add('hidden'); souAdmin=true; meuId='admin-'+codigoSala; atualizarStatusConexao(); document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; render();
+  document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('painelAdminDesktop').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('painelConvidado').classList.add('hidden'); document.getElementById('painelSorteioGeral').classList.add('hidden'); souAdmin=true; meuId='admin-'+codigoSala; atualizarStatusConexao(); document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; render();
 }
-
 function entrarComoConvidadoPorCodigo(){
   const codigo=document.getElementById('inputEntrarSala').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
   if(!codigo){ alert('Digite o número da sala'); return; }
   location.href=location.origin+location.pathname+'?sala='+codigo;
 }
-
 const params=new URLSearchParams(location.search);
 if(params.get('sala')){
   codigoSala=params.get('sala').toUpperCase();
@@ -365,7 +325,7 @@ if(params.get('sala')){
     const estadoSalvo=localStorage.getItem('bingo_estado_guest_'+codigoSala);
     if(estadoSalvo){ try{ estadoSala=JSON.parse(estadoSalvo); }catch(e){} }
     iniciarPeerJogador();
-    document.getElementById('btnCopiarLink').classList.add('hidden'); document.getElementById('painelAdmin').classList.add('hidden'); document.getElementById('painelSorteadosAdmin').classList.add('hidden'); document.getElementById('painelConvidado').classList.remove('hidden');
+    document.getElementById('btnCopiarLink').classList.add('hidden'); document.getElementById('painelAdminDesktop').classList.add('hidden'); document.getElementById('painelSorteadosAdmin').classList.add('hidden'); document.getElementById('painelConvidado').classList.remove('hidden');
     if(sessao){
       try{
         const s=JSON.parse(sessao);
@@ -399,13 +359,12 @@ if(params.get('sala')){
     }catch(e){}
   }
 }
-
 function iniciarPeerAdmin(){
   if(peer && peer.id) return;
   peer=new Peer('bingo-'+codigoSala);
   peer.on('open', ()=>{
     atualizarStatusConexao();
-    document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden');
+    document.getElementById('painelAdminDesktop').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden');
     document.getElementById('meuNomeDisplay').innerText='Admin'; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome;
     peer.on('connection', conn=>{
       conn.on('open', ()=>{
@@ -418,7 +377,6 @@ function iniciarPeerAdmin(){
     render();
   });
 }
-
 function iniciarPeerJogador(){
   const sessao=localStorage.getItem('bingo_sessao_'+codigoSala);
   let dados=null; if(sessao){ try{ dados=JSON.parse(sessao); }catch(e){} }
@@ -440,7 +398,6 @@ function iniciarPeerJogador(){
   peer.on('close', ()=>{ setTimeout(tentarReconectar, 1500); });
   peer.on('error', (err)=>{ setTimeout(tentarReconectar, 2000); });
 }
-
 function conectarAoAdmin(){
   if(!codigoSala ||!peer) return;
   atualizarStatusConexao('CONECTANDO...');
@@ -468,7 +425,6 @@ function conectarAoAdmin(){
   });
   connAdmin.on('error', ()=>{ setTimeout(tentarReconectar, 2000); });
 }
-
 function tentarReconectar(){
   if(souAdmin) return;
   if(document.visibilityState!=='visible'){ return; }
@@ -480,7 +436,6 @@ function tentarReconectar(){
     conectarAoAdmin();
   }
 }
-
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState==='visible' &&!souAdmin && codigoSala){
     setTimeout(()=>{ tentarReconectar(); }, 500);
@@ -496,7 +451,6 @@ window.addEventListener('online', ()=>{
   if(!souAdmin && codigoSala){ setTimeout(tentarReconectar, 800); }
   if(connAdmin) try{ connAdmin.send({type:'status', jogId:meuId, online:true}); }catch(e){}
 });
-
 function confirmarNome(){
   let codigoModal=null;
   const campoCodigo=document.getElementById('campoCodigoSala');
@@ -512,7 +466,6 @@ function confirmarNome(){
   }
   enviarEntrada();
 }
-
 function enviarEntrada(){
   const nome=document.getElementById('modalInputNome').value.trim(); if(!nome) return;
   meuNome=nome; document.getElementById('meuNomeDisplay').innerText=nome;
@@ -521,7 +474,6 @@ function enviarEntrada(){
   if(connAdmin && connAdmin.open) connAdmin.send({type:'entrar', nome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:navigator.onLine});
   else { setTimeout(()=>{ if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:true}); }, 1000); }
 }
-
 function handleDataAdmin(data, conn){
   if(data.type==='ping'){ try{ conn.send({type:'pong'}); }catch(e){} return; }
   if(data.type==='entrar'){
@@ -555,7 +507,6 @@ function handleDataAdmin(data, conn){
     if(j && c && c.donoId===j.id){ c.donoId=null; c.donoNome=null; c.nomeCartela=null; j.cartelas=j.cartelas.filter(id=>id!==c.id); broadcastEstado(); }
   }
 }
-
 function toggleCartelaServer(cartId, jogId, nomeCartela){
   const cart=estadoSala.cartelas.find(c=>c.id===cartId); const jog=estadoSala.jogadores.find(j=>j.id===jogId); if(!cart||!jog) return;
   if(estadoSala.cartelasPremiadas.includes(cartId)) return;
@@ -569,7 +520,6 @@ function toggleCartelaServer(cartId, jogId, nomeCartela){
   if(modoEscolhaExtra===false){ jog.status='pendente'; }
   broadcastEstado();
 }
-
 function broadcastEstado(){
   localStorage.setItem('bingo_estado_'+codigoSala, JSON.stringify(estadoSala));
   Object.values(conexoes).forEach(c=>{
@@ -577,9 +527,8 @@ function broadcastEstado(){
   });
   render();
 }
-
 function handleDataJogador(data){
-  if(data.type==='pong'){ return; }
+  if(data.type==='ping'){ return; }
   if(data.type==='alerta'){ executarEfeitoAlerta(); return; }
   if(data.type==='fim_jogo'){ document.getElementById('overlayFimJogo').classList.remove('hidden'); document.getElementById('overlayFimJogo').classList.add('flex'); return; }
   if(data.type==='nova_partida'){ document.getElementById('overlayFimJogo').classList.add('hidden'); document.getElementById('overlayFimJogo').classList.remove('flex'); }
@@ -614,14 +563,12 @@ function handleDataJogador(data){
   if(data.type==='aprovado_pra_mim'){ praMimBloqueado=false; document.getElementById('msgExtraNegado').classList.add('hidden'); document.getElementById('btnExtraPraMim').disabled=false; alert('Admin aprovou! Você pode manter no seu nome.'); }
   if(data.type==='negado_pra_mim'){ praMimBloqueado=true; document.getElementById('msgExtraNegado').classList.remove('hidden'); document.getElementById('btnExtraPraMim').disabled=true; alert('Admin negou. Dê outro nome à cartela.'); }
 }
-
 function enviarAlertaConvidado(){
   Object.values(conexoes).forEach(c=>{
     try{ if(c.open) c.send({type:'alerta'}); }catch(e){}
   });
   alert('Alerta enviado para os convidados!');
 }
-
 function executarEfeitoAlerta(){
   const overlay=document.getElementById('overlayAlertaPiscar');
   const prepareSe=document.getElementById('overlayPrepareSe');
@@ -637,9 +584,7 @@ function executarEfeitoAlerta(){
     }, 5000);
   }, 1500);
 }
-
 function mostrarToastExtra(qtd){ const toast=document.getElementById('toastExtra'); toast.innerText=`🎉 Você ganhou ${qtd} cartela(s) extra!`; toast.classList.remove('hidden'); setTimeout(()=>toast.classList.add('hidden'), 4000); }
-
 function toggleCartela(id){
   if(souAdmin){ toggleCartelaServer(id, meuId); return; }
   const eu=estadoSala.jogadores.find(j=>j.id===meuId);
@@ -650,7 +595,6 @@ function toggleCartela(id){
   }
   if(connAdmin) connAdmin.send({type:'reservar', cartId:id, jogId:meuId});
 }
-
 function abrirModalExtraNome(){
   const eu=estadoSala.jogadores? estadoSala.jogadores.find(j=>j.id===meuId) : null;
   if(!eu &&!cartelaExtraPendente) return;
@@ -662,7 +606,6 @@ function abrirModalExtraNome(){
   if(praMimBloqueado) document.getElementById('msgExtraNegado').classList.remove('hidden');
   else document.getElementById('msgExtraNegado').classList.add('hidden');
 }
-
 function confirmarExtraNome(praMim){
   const nomeExtra=document.getElementById('inputNomeExtra').value.trim();
   if(!praMim &&!nomeExtra){ alert('Digite um nome'); return; }
@@ -682,7 +625,6 @@ function confirmarExtraNome(praMim){
   document.getElementById('modalExtraNome').classList.remove('flex');
   cartelaExtraPendente=null;
 }
-
 function mostrarPainelRemoverCartela(){
   const eu=estadoSala.jogadores.find(j=>j.id===meuId); if(!eu) return;
   const painel=document.getElementById('painelRemoverCartela');
@@ -697,24 +639,19 @@ function mostrarPainelRemoverCartela(){
     lista.appendChild(div);
   });
 }
-
 function removerMinhaCartela(cartId){
   if(connAdmin) connAdmin.send({type:'remover_cartela', cartId, jogId:meuId});
   document.getElementById('painelRemoverCartela').classList.add('hidden');
 }
-
 function toggleNumeroManual(num){
   if(!num || num===0) return;
   const eu=estadoSala.jogadores.find(j=>j.id===meuId);
   if(!eu) return;
-  
-  // Regra 1: Se o limite atual for menor que a quantidade de cartelas selecionadas, impede marcação.
   if(eu.cartelas.length > getLimite(eu)){
     alert('Atenção: O Admin reduziu seu limite (-1 EXTRA). Você deve remover/desistir de uma cartela antes de continuar marcando.');
     mostrarPainelRemoverCartela();
     return;
   }
-  
   if(eu.status!=='pronto') return;
   eu.marcados=eu.marcados||[];
   if(eu.marcados.includes(num)){ eu.marcados=eu.marcados.filter(n=>n!==num); }
@@ -723,9 +660,7 @@ function toggleNumeroManual(num){
   if(connAdmin) connAdmin.send({type:'marcar', jogId:meuId, marcados:eu.marcados});
   render();
 }
-
 function ficarPronto(){ modoEscolhaExtra=false; if(connAdmin) connAdmin.send({type:'pronto', jogId:meuId}); }
-
 function escolherExtra(){
   modoEscolhaExtra=true;
   document.getElementById('colCartelas').classList.remove('hidden');
@@ -738,7 +673,6 @@ function escolherExtra(){
   render();
   document.getElementById('colCartelas').scrollIntoView({behavior:'smooth'});
 }
-
 function addLimite(jogId, delta){
   const j=estadoSala.jogadores.find(x=>x.id===jogId);
   const atual=j.limite!=null? j.limite : estadoSala.limitePadrao;
@@ -748,7 +682,6 @@ function addLimite(jogId, delta){
   }
   j.limite=n; broadcastEstado();
 }
-
 function aprovarPraMim(jogId, cartId){
   const j=estadoSala.jogadores.find(x=>x.id===jogId);
   if(j){ j.praMimBloqueado=false; }
@@ -761,7 +694,6 @@ function aprovarPraMim(jogId, cartId){
   solicitacoesPendentes=solicitacoesPendentes.filter(s=>s.jogId!==jogId);
   renderSolicitacoes(); broadcastEstado();
 }
-
 function negarPraMim(jogId){
   const j=estadoSala.jogadores.find(x=>x.id===jogId);
   if(j){ j.praMimBloqueado=true; }
@@ -770,14 +702,12 @@ function negarPraMim(jogId){
   solicitacoesPendentes=solicitacoesPendentes.filter(s=>s.jogId!==jogId);
   renderSolicitacoes(); broadcastEstado();
 }
-
 function renderSolicitacoes(){
   const div=document.getElementById('solicitacoesExtras');
   if(solicitacoesPendentes.length===0){ div.classList.add('hidden'); div.innerHTML=''; return; }
   div.classList.remove('hidden');
   div.innerHTML=solicitacoesPendentes.map(s=>`<div class="flex justify-between items-center bg-white p-3 rounded-xl mb-2"><span class="font-black text-sm">${s.nome} quer manter mais de uma!</span><div class="flex gap-2"><button onclick="aprovarPraMim('${s.jogId}', ${s.cartId||'null'})" class="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-black">Aprovar</button><button onclick="negarPraMim('${s.jogId}')" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black">Negar</button></div></div>`).join('');
 }
-
 function excluirJogador(jogId){
   const senha=prompt('Digite a senha 0000 para excluir o jogador:');
   if(senha!=='0000'){ alert('Senha incorreta!'); return; }
@@ -789,9 +719,7 @@ function excluirJogador(jogId){
     broadcastEstado();
   }
 }
-
-function iniciarPartida(){ estadoSala.status='jogando'; broadcastEstado(); alert('Partida iniciada! As cartelas foram direcionadas para a roleta.'); }
-
+function iniciarPartida(){ estadoSala.status='jogando'; broadcastEstado(); alert('Partida iniciada! Cartelas foram para o painel da roleta.'); }
 function confirmarNovaPartida(){
   if(confirm("Deseja iniciar um NOVO JOGO na mesma sala? Os números sorteados serão zerados.")){
     estadoSala.numerosSorteados=[];
@@ -803,7 +731,6 @@ function confirmarNovaPartida(){
     broadcastEstado();
   }
 }
-
 function finalizarPartidaTotal(){
   estadoSala.status='encerrado';
   broadcastEstado();
@@ -816,7 +743,6 @@ function finalizarPartidaTotal(){
     }
   }, 500);
 }
-
 function iniciarGiro(){
   const bola=document.getElementById('bolaGirando');
   document.getElementById('btnGirar').classList.add('hidden');
@@ -824,7 +750,6 @@ function iniciarGiro(){
   bola.classList.add('girando');
   intervaloGiro=setInterval(()=>{ bola.innerText=Math.floor(Math.random()*75)+1; },80);
 }
-
 function pararGiro(){
   clearInterval(intervaloGiro);
   document.getElementById('bolaGirando').classList.remove('girando');
@@ -832,27 +757,16 @@ function pararGiro(){
   document.getElementById('btnParar').classList.add('hidden');
   sortearNumero();
 }
-
 function sortearNumero(){ const todos=[...Array(75).keys()].map(n=>n+1); const disp=todos.filter(n=>!estadoSala.numerosSorteados.includes(n)); if(!disp.length){ alert('Acabou'); return; } const num=disp[Math.floor(Math.random()*disp.length)]; estadoSala.numerosSorteados.push(num); const bola=document.getElementById('bolaGirando'); if(bola) bola.innerText=num; broadcastEstado(); }
-
 function copiarLinkSala(){ const link=location.origin+location.pathname+'?sala='+codigoSala; navigator.clipboard.writeText(link); alert('Link copiado'); }
-
 function soltarConfete(){ for(let i=0;i<80;i++){ const c=document.createElement('div'); c.className='confete'; c.style.left=Math.random()*100+'vw'; c.style.backgroundColor=`hsl(${Math.random()*360},100%,50%)`; document.body.appendChild(c); setTimeout(()=>c.remove(),4000); } }
-
 function mostrarPremio(){ document.getElementById('modalPremio').classList.remove('hidden'); document.getElementById('modalPremio').classList.add('flex'); soltarConfete(); }
-
 function fecharPremio(){ document.getElementById('modalPremio').classList.add('hidden'); document.getElementById('modalPremio').classList.remove('flex'); }
-
 function toggleModalCartelasAdmin(){ const m=document.getElementById('modalCartelasAdmin'); if(m.classList.contains('hidden')){ m.classList.remove('hidden'); m.classList.add('flex'); renderCartelasAdminModal(); } else { m.classList.add('hidden'); m.classList.remove('flex'); } }
-
 function renderCartelasAdminModal(){ const grid=document.getElementById('gridCartelasAdminModal'); grid.innerHTML=''; estadoSala.cartelas.filter(c=>!c.donoId &&!estadoSala.cartelasPremiadas.includes(c.id)).forEach(cart=>{ const div=document.createElement('div'); div.className='bg-zinc-50 border-2 rounded-xl p-2'; let html=`<div class='text-[10px] font-black mb-1'>${cart.numero} LIVRE</div><div class='grid grid-cols-5 gap-[1px] text-[8px] font-bold'>`; for(let l of ['B','I','N','G','O']) html+=`<div class='bg-black text-white cell-square'>${l}</div>`; cart.grid.forEach(row=>{ row.forEach(v=>{ if(v==='BINGO FELIZ') html+=`<div class='border bg-black text-white cell-square flex-col text-[5px]'><span>BINGO</span><span>FELIZ</span></div>`; else html+=`<div class='border bg-white cell-square'>${v}</div>`; }); }); html+=`</div>`; div.innerHTML=html; grid.appendChild(div); }); }
-
 function abrirConferirBingo(){ document.getElementById('modalConferir').classList.remove('hidden'); document.getElementById('modalConferir').classList.add('flex'); document.getElementById('resultadoConferir').classList.add('hidden'); document.getElementById('areaPremiar').classList.add('hidden'); }
-
 function fecharConferir(){ document.getElementById('modalConferir').classList.add('hidden'); document.getElementById('modalConferir').classList.remove('flex'); }
-
 function fecharConferirContinuar(){ fecharConferir(); }
-
 function checarBingo(){
   const txt=document.getElementById('inputConferir').value.trim(); if(!txt){ alert('Digite os números'); return; }
   const nums=txt.split(/[\s,]+/).map(n=>parseInt(n)).filter(n=>!isNaN(n));
@@ -888,7 +802,6 @@ function checarBingo(){
     area.classList.add('hidden');
   }
 }
-
 function premiarCartela(cartId, cartaoCheio){
   if(!estadoSala.cartelasPremiadas) estadoSala.cartelasPremiadas=[];
   if(estadoSala.cartelasPremiadas.includes(cartId)){ alert('Já premiada'); return; }
@@ -903,7 +816,6 @@ function premiarCartela(cartId, cartaoCheio){
   if(jogador){ const conn=conexoes[jogador.id]; if(conn){ try{ conn.send({type:'premio'}); }catch(e){} } }
   soltarConfete();
   fecharConferir();
-
   if(cartaoCheio){
     alert(`Bingo de Cartão Cheio Confirmado! Finalizando a partida...`);
     finalizarPartidaTotal();
@@ -911,7 +823,6 @@ function premiarCartela(cartId, cartaoCheio){
     alert(`Cartela premiada e removida!`);
   }
 }
-
 function atualizarStatusConexao(status){
   const el=document.getElementById('statusConexao'); if(!el) return;
   if(status){ el.innerText=status; }
@@ -920,7 +831,6 @@ function atualizarStatusConexao(status){
   else if(el.innerText.includes('RECONECTANDO')){ el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-400 text-black animate-pulse'; }
   else { el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-200'; }
 }
-
 function render(){
   if(!estadoSala.cartelas) return;
   const eu=souAdmin? null : estadoSala.jogadores.find(j=>j.id===meuId);
@@ -948,7 +858,6 @@ function render(){
     if(btnCartelas) btnCartelas.classList.add('hidden');
     if(colCartelas) colCartelas.classList.remove('hidden');
   }
-
   const grid=document.getElementById('gridCartelas');
   const painelGeral=document.getElementById('painelSorteioGeral');
   const painelUlt=document.getElementById('painelUltimoConvidado');
@@ -964,23 +873,18 @@ function render(){
   } else {
     if(painelGeral) painelGeral.classList.add('hidden');
   }
-
   const podeEscolherExtra = eu && eu.status==='pronto' && jogadorAtual.cartelas.length < getLimite(eu);
   const precisaRemoverExtra = eu && jogadorAtual.cartelas.length > getLimite(eu);
-
   if(precisaRemoverExtra){
     mostrarPainelRemoverCartela();
   }
-
   if(grid){
     if(!souAdmin && eu && eu.status==='pronto' &&!modoEscolhaExtra &&!podeEscolherExtra){
       document.getElementById('colCartelasContainer').classList.add('hidden');
       const painel=document.getElementById('painelConvidado');
       painel.classList.remove('hidden');
       const multi=(jogadorAtual.cartelas.length>1);
-      
       let avisoBloqueio = precisaRemoverExtra ? `<div class="bg-red-600 text-white font-black text-center p-3 rounded-xl mb-3 animate-pulse">⚠️ Seu limite diminuiu. Escolha uma cartela para remover abaixo antes de marcar!</div>` : '';
-      
       painel.innerHTML=`${avisoBloqueio}<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length} ${multi?'<span class=text-[10px]>(deslize pro lado)</span>':''} <span class="text-[10px] opacity-60 block">Toque para marcar</span></h3><div id="minhasCartelasGrande" class="${multi?'carousel':'space-y-4'}"></div><p class="text-center font-black text-green-600 mt-4">✅ VISTO - PRONTO</p>`;
       const grande=document.getElementById('minhasCartelasGrande');
       if(grande){
@@ -1054,7 +958,6 @@ function render(){
       }
     }
   }
-
   if(souAdmin){
     const listaHtml=estadoSala.jogadores.map(j=>{
       const pronto=j.status==='pronto'; const offline=j.online===false;
@@ -1069,7 +972,6 @@ function render(){
     document.getElementById('bolasSorteadasAdmin').innerHTML=estadoSala.numerosSorteados.map(n=>`<span class='bg-black text-white px-2.5 py-1 rounded-full text-xs font-black'>${n}</span>`).join('');
     document.getElementById('bolasSorteadasAdminDentro').innerHTML=estadoSala.numerosSorteados.map(n=>`<span class='bg-black text-white px-2.5 py-1 rounded-full text-xs font-black'>${n}</span>`).join('');
   }
-
   const ultimo=estadoSala.numerosSorteados.length? estadoSala.numerosSorteados[estadoSala.numerosSorteados.length-1] : '--';
   const elUlt=document.getElementById('ultimoNumero'); if(elUlt) elUlt.innerText=ultimo;
   const elUltConv=document.getElementById('ultimoNumeroConvidado'); if(elUltConv) elUltConv.innerText=ultimo;
