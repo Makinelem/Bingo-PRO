@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo Feliz V8 - Fix Marcação</title>
+<title>Bingo Feliz V8 - Fix Ícones</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -11,13 +11,9 @@
 .cell-square{aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; position:relative;}
 .carousel{scroll-snap-type:x mandatory; display:flex; gap:16px; overflow-x:auto;}
 .carousel-item{scroll-snap-align:center; flex:0 0 90%;}
-/* FIX MARCAÇÃO - NÃO TAMPA NÚMERO */
-.marcador-overlay{
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  font-size:22px; opacity:0.55; pointer-events:none;
-}
-.cell-num{ z-index:1; }
+.marcador-svg{width:70%; height:70%; opacity:0.55; pointer-events:none; position:absolute;}
+.icon-option svg{width:26px; height:26px;}
+.cell-num{z-index:1;}
 </style>
 </head>
 <body class="bg-black text-white min-h-screen">
@@ -64,22 +60,18 @@
 <h2 class="text-2xl font-black mb-1">Entrar no Bingo Feliz</h2>
 <p id="modalInfo" class="text-xs text-zinc-500 mb-4"></p>
 <input id="modalInputNome" class="w-full bg-zinc-100 rounded-xl p-4 font-bold mb-4" placeholder="Seu nome">
-<p class="text-[11px] font-black mb-2">ÍCONE DE MARCAÇÃO:</p>
-<div class="grid grid-cols-5 gap-2 mb-3" id="gridIcones">
-<button onclick="setMarcadorModal('❌')" class="icon-btn border-2 border-black p-3 rounded-xl">❌</button>
-<button onclick="setMarcadorModal('✅')" class="icon-btn border-2 border-black p-3 rounded-xl bg-black text-white">✅</button>
-<button onclick="setMarcadorModal('⭕')" class="icon-btn border-2 border-black p-3 rounded-xl">⭕</button>
-<button onclick="setMarcadorModal('⭐')" class="icon-btn border-2 border-black p-3 rounded-xl">⭐</button>
-<button onclick="setMarcadorModal('❤️')" class="icon-btn border-2 border-black p-3 rounded-xl">❤️</button>
-</div>
+<p class="text-[11px] font-black mb-2">ÍCONE DE MARCAÇÃO (muda de cor):</p>
+<div class="grid grid-cols-5 gap-2 mb-3" id="iconGrid"></div>
 <div class="flex gap-2 mb-4">
-<button onclick="setCorIcone('#000000')" class="w-8 h-8 rounded-full bg-black border-2"></button>
+<button onclick="setCorIcone('#000000')" class="w-8 h-8 rounded-full bg-black border"></button>
 <button onclick="setCorIcone('#ef4444')" class="w-8 h-8 rounded-full bg-red-500"></button>
 <button onclick="setCorIcone('#22c55e')" class="w-8 h-8 rounded-full bg-green-500"></button>
 <button onclick="setCorIcone('#3b82f6')" class="w-8 h-8 rounded-full bg-blue-500"></button>
 <button onclick="setCorIcone('#eab308')" class="w-8 h-8 rounded-full bg-yellow-500"></button>
 </div>
-<div class="text-center mb-4 text-sm font-black bg-zinc-100 p-3 rounded-xl">Preview: <span id="marcadorModalDisplay" class="text-2xl inline-flex items-center justify-center w-8 h-8" style="color:#000">✅</span> <span class="text-[11px] opacity-60">o número fica visível atrás</span></div>
+<div class="text-center mb-4 text-sm font-black bg-zinc-100 p-3 rounded-xl">
+Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middle"></span> <span id="previewTexto" class="text-[11px] opacity-60">número visível atrás</span>
+</div>
 <button onclick="confirmarNome()" class="w-full bg-black text-white rounded-xl py-4 font-black">ENTRAR</button>
 </div>
 </div>
@@ -133,9 +125,37 @@
 </div>
 </div>
 <script>
-let peer=null, connAdmin=null, conexoes={}, souAdmin=false, codigoSala=null, meuId=null, meuNome=null, marcadorModal='✅', corIcone='#000000', meuLimiteAnterior=1;
+let peer=null, connAdmin=null, conexoes={}, souAdmin=false, codigoSala=null, meuId=null, meuNome=null, corIcone='#000000', meuLimiteAnterior=1;
 let modoEscolhaExtra=false;
+let marcadorSelecionado='check';
 let estadoSala={nome:'', total:20, limitePadrao:1, cartelas:[], jogadores:[], numerosSorteados:[], status:'lobby'};
+
+// ÍCONES SVG QUE MUDAM DE COR (do segundo código)
+const ICONES={
+check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l10-10"/></svg>`,
+x:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+heart:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-6.5-4.35-9-8.5A5.5 5.5 0 0 1 12 5a5.5 5.5 0 0 1 9 7.5c-2.5 4.15-9 8.5-9 8.5z"/></svg>`,
+circle:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="9"/></svg>`,
+star:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.5L22 9.3l-5 5 1.2 7L12 18l-6.2 3.3L7 14.3l-5-5 7.1-.8L12 2z"/></svg>`
+};
+function renderIconGrid(){
+  const grid=document.getElementById('iconGrid'); if(!grid) return;
+  grid.innerHTML='';
+  Object.keys(ICONES).forEach(k=>{
+    const b=document.createElement('button');
+    b.className='icon-option border-2 rounded-xl p-3 flex items-center justify-center '+(k===marcadorSelecionado?'border-black bg-zinc-100':'border-zinc-200');
+    b.innerHTML=ICONES[k]; b.style.color=corIcone;
+    b.onclick=()=>{ marcadorSelecionado=k; renderIconGrid(); atualizarPreview(); };
+    grid.appendChild(b);
+  });
+}
+function atualizarPreview(){
+  const el=document.getElementById('marcadorModalDisplay'); if(!el) return;
+  el.innerHTML=ICONES[marcadorSelecionado]; el.style.color=corIcone;
+}
+function setCorIcone(cor){ corIcone=cor; renderIconGrid(); atualizarPreview(); }
+// inicializa grid
+setTimeout(()=>{ renderIconGrid(); atualizarPreview(); },100);
 
 function genCartelas(total){
   const cartelas=[];
@@ -192,27 +212,11 @@ const params=new URLSearchParams(location.search);
 if(params.get('sala')){ document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); codigoSala=params.get('sala'); if(params.get('admin')==='1'){ const saved=localStorage.getItem('bingo_estado_'+codigoSala); if(saved){ estadoSala=JSON.parse(saved); souAdmin=true; meuId='admin-'+codigoSala; meuNome='Admin'; iniciarPeerAdmin(); } } else { iniciarPeerJogador(); document.getElementById('btnCopiarLink').classList.add('hidden'); document.getElementById('painelAdmin').classList.add('hidden'); document.getElementById('painelSorteadosAdmin').classList.add('hidden'); document.getElementById('painelConvidado').classList.remove('hidden'); } document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; }
 function iniciarPeerAdmin(){ if(peer) return; peer=new Peer('bingo-'+codigoSala); peer.on('open', ()=>{ atualizarStatusConexao(); document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('meuNomeDisplay').innerText='Admin'; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; peer.on('connection', conn=>{ conexoes[conn.peer]=conn; conn.on('open', ()=>{ conn.on('data', data=>handleDataAdmin(data, conn)); conn.send({type:'estado', estado:estadoSala}); }); }); render(); }); }
 function iniciarPeerJogador(){ document.getElementById('modalInfo').innerText='Bingo Feliz - Sala: '+codigoSala; peer=new Peer(); peer.on('open', myId=>{ meuId=myId; meuLimiteAnterior=estadoSala.limitePadrao; connAdmin=peer.connect('bingo-'+codigoSala); connAdmin.on('open', ()=>{ atualizarStatusConexao(); connAdmin.on('data', data=>handleDataJogador(data)); }); }); }
-
-// FIX COR E PREVIEW
-function setMarcadorModal(m){
-  marcadorModal=m;
-  const el=document.getElementById('marcadorModalDisplay');
-  el.innerText=m; el.style.color=corIcone;
-  document.querySelectorAll('#gridIcones.icon-btn').forEach(b=>{
-    b.classList.remove('bg-black','text-white');
-    if(b.innerText===m) b.classList.add('bg-black','text-white');
-  });
-}
-function setCorIcone(cor){
-  corIcone=cor;
-  const el=document.getElementById('marcadorModalDisplay');
-  el.style.color=cor;
-}
-function confirmarNome(){ const nome=document.getElementById('modalInputNome').value.trim(); if(!nome) return; meuNome=nome; document.getElementById('meuNomeDisplay').innerText=nome; document.getElementById('modalNome').classList.add('hidden'); if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcador:marcadorModal, cor:corIcone, online:navigator.onLine}); }
+function confirmarNome(){ const nome=document.getElementById('modalInputNome').value.trim(); if(!nome) return; meuNome=nome; document.getElementById('meuNomeDisplay').innerText=nome; document.getElementById('modalNome').classList.add('hidden'); if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:navigator.onLine}); }
 function handleDataAdmin(data, conn){
-  if(data.type==='entrar'){ let j=estadoSala.jogadores.find(x=>x.id===data.id); if(!j){ j={id:data.id, nome:data.nome, marcador:data.marcador||'✅', cor:data.cor||'#000', limite:null, status:'pendente', cartelas:[], marcados:[], online:data.online!=null?data.online:true}; estadoSala.jogadores.push(j); } else { j.online=data.online; } broadcastEstado(); }
+  if(data.type==='entrar'){ let j=estadoSala.jogadores.find(x=>x.id===data.id); if(!j){ j={id:data.id, nome:data.nome, marcadorTipo:data.marcadorTipo||'check', cor:data.cor||'#000', limite:null, status:'pendente', cartelas:[], marcados:[], online:data.online!=null?data.online:true}; estadoSala.jogadores.push(j); } else { j.online=data.online; } broadcastEstado(); }
   if(data.type==='reservar'){ toggleCartelaServer(data.cartId, data.jogId); }
-  if(data.type==='pronto'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.status='pronto'; j.marcador=data.marcador||j.marcador; j.cor=data.cor||j.cor; } broadcastEstado(); }
+  if(data.type==='pronto'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.status='pronto'; } broadcastEstado(); }
   if(data.type==='status'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.online=data.online; broadcastEstado(); } }
   if(data.type==='marcar'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.marcados=data.marcados; broadcastEstado(); } }
 }
@@ -245,7 +249,7 @@ function toggleNumeroManual(num){
   if(connAdmin) connAdmin.send({type:'marcar', jogId:meuId, marcados:eu.marcados});
   render();
 }
-function ficarPronto(){ modoEscolhaExtra=false; if(connAdmin) connAdmin.send({type:'pronto', jogId:meuId, marcador:marcadorModal, cor:corIcone}); }
+function ficarPronto(){ modoEscolhaExtra=false; if(connAdmin) connAdmin.send({type:'pronto', jogId:meuId}); }
 function escolherExtra(){
   modoEscolhaExtra=true;
   document.getElementById('colCartelas').classList.remove('hidden');
@@ -288,13 +292,13 @@ function render(){
       const painel=document.getElementById('painelConvidado');
       painel.classList.remove('hidden');
       const multi=(jogadorAtual.cartelas.length>1);
-      painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length} ${multi?'<span class=text-[10px]>(deslize pro lado)</span>':''} <span class="text-[10px] opacity-60 block">Toque no número para marcar - número fica visível</span></h3><div id="minhasCartelasGrande" class="${multi?'carousel':'space-y-4'}"></div><p class="text-center font-black text-green-600 mt-4">✅ VISTO - PRONTO</p>`;
+      painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length} ${multi?'<span class=text-[10px]>(deslize pro lado)</span>':''} <span class="text-[10px] opacity-60 block">Toque para marcar - número sempre visível</span></h3><div id="minhasCartelasGrande" class="${multi?'carousel':'space-y-4'}"></div><p class="text-center font-black text-green-600 mt-4">✅ VISTO - PRONTO</p>`;
       const grande=document.getElementById('minhasCartelasGrande');
       if(grande){
         grande.innerHTML='';
         jogadorAtual.cartelas.forEach(id=>{
           const c=estadoSala.cartelas.find(x=>x.id===id); if(!c) return;
-          let html=`<div class="${multi?'carousel-item bg-zinc-50':'bg-zinc-50'} border-2 border-black rounded-xl p-3"><div class="flex justify-between text-xs font-black mb-2"><span>Cartela ${c.numero}</span><span style="color:${eu.cor||'#000'}">${eu.marcador}</span></div><div class="grid grid-cols-5 gap-[1px]">`;
+          let html=`<div class="${multi?'carousel-item bg-zinc-50':'bg-zinc-50'} border-2 border-black rounded-xl p-3"><div class="flex justify-between text-xs font-black mb-2"><span>Cartela ${c.numero}</span><span style="color:${eu.cor||'#000'}">${ICONES[eu.marcadorTipo]? `<span style='display:inline-block;width:18px;height:18px;'>${ICONES[eu.marcadorTipo]}</span>` : ''}</span></div><div class="grid grid-cols-5 gap-[1px]">`;
           for(let l of ['B','I','N','G','O']) html+=`<div class="bg-black text-white cell-square text-[10px] font-black">${l}</div>`;
           c.grid.forEach(row=>{
             row.forEach(v=>{
@@ -304,8 +308,8 @@ function render(){
               if(isFree){
                 html+=`<div class="border bg-black text-white cell-square flex-col leading-none text-[7px] font-black cursor-default"><span>BINGO</span><span>FELIZ</span></div>`;
               } else {
-                // FIX: sem bg-yellow, com overlay opaco
-                html+=`<div onclick="toggleNumeroManual(${v})" class="border bg-white cell-square text-xs font-bold relative cursor-pointer select-none"><span class="cell-num">${v}</span>${estaMarcado?`<div class="marcador-overlay" style="color:${eu.cor||'#000'}">${eu.marcador}</div>`:''}</div>`;
+                // FIX SEM FUNDO AMARELO, ÍCONE COM OPACIDADE
+                html+=`<div onclick="toggleNumeroManual(${v})" class="border bg-white cell-square text-xs font-bold relative cursor-pointer select-none"><span class="cell-num">${v}</span>${estaMarcado?`<span class="marcador-svg" style="color:${eu.cor||'#000'}">${ICONES[eu.marcadorTipo]||ICONES.check}</span>`:''}</div>`;
               }
             });
           });
@@ -370,7 +374,7 @@ function render(){
     estadoSala.jogadores.forEach(j=>{
       const pronto=j.status==='pronto'; const offline=j.online===false;
       const corNome=offline? 'bg-yellow-400 text-black animate-pulse' : pronto? 'bg-green-100' : 'bg-red-100';
-      lj.innerHTML+=`<div class='flex items-center justify-between p-2 rounded-xl border-2 ${pronto?'border-green-600':'border-red-400'} ${corNome}'><div class='flex items-center gap-2'><span>${offline?'🟡':pronto?'🟢':'🔴'}</span><span class='text-sm font-bold'>${j.nome} <span style="color:${j.cor||'#000'}">${j.marcador||''}</span></span><span class='text-[10px]'>${j.cartelas.length}/${getLimite(j)} ${pronto?'✅ VISTO':''} ${offline?'(OFFLINE)':''}</span></div><div class='flex gap-1'><button onclick='addLimite("${j.id}",1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>+1 EXTRA</button></div></div>`;
+      lj.innerHTML+=`<div class='flex items-center justify-between p-2 rounded-xl border-2 ${pronto?'border-green-600':'border-red-400'} ${corNome}'><div class='flex items-center gap-2'><span>${offline?'🟡':pronto?'🟢':'🔴'}</span><span class='text-sm font-bold'>${j.nome} <span style="color:${j.cor||'#000'};display:inline-block;width:16px;height:16px;">${ICONES[j.marcadorTipo]||''}</span></span><span class='text-[10px]'>${j.cartelas.length}/${getLimite(j)} ${pronto?'✅ VISTO':''} ${offline?'(OFFLINE)':''}</span></div><div class='flex gap-1'><button onclick='addLimite("${j.id}",1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>+1 EXTRA</button></div></div>`;
     });
     document.getElementById('ultimoNumeroAdmin').innerText=estadoSala.numerosSorteados.length? estadoSala.numerosSorteados[estadoSala.numerosSorteados.length-1] : '--';
     document.getElementById('totalSorteadosAdmin').innerText=estadoSala.numerosSorteados.length;
