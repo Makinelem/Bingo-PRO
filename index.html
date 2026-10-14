@@ -3,214 +3,323 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo B&W - Online Real V2</title>
+<title>Bingo B&W - PeerJS Online Real</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<style>
-*{font-family:Space Grotesk,sans-serif}
-body{background:#000;color:#fff}
-.white-card{background:#fff;color:#000;border:2px solid #000}
-.black-card{background:#000;color:#fff;border:2px solid #fff}
-.cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:900;border:1px solid #000;background:#fff;color:#000;position:relative;cursor:pointer}
-.cell.marked{background:#000;color:#fff}
-.cartela{cursor:pointer;border:2px solid #000}
-.cartela.sel{border-color:#fff;box-shadow:0 0 0 3px #fff}
-</style>
+<style>body{font-family:Space Grotesk,sans-serif}</style>
 </head>
-<body class="min-h-screen p-3">
-<div id="setup" class="min-h-screen flex items-center justify-center">
-<div class="white-card rounded-[2rem] p-8 w-full max-w-md">
-<h1 class="text-4xl font-black text-center">BINGO<span class="bg-black text-white px-3 ml-1">B&W</span></h1>
-<p class="text-center text-[11px] font-bold opacity-60 mt-2">V2 - 100% ONLINE REAL COM SERVIDOR</p>
-<input id="nomeSala" placeholder="NOME DA SALA" class="w-full border-2 border-black p-4 rounded-xl mt-8 font-bold outline-none">
-<input id="totalCartelas" type="number" value="20" min="1" max="100" class="w-full border-2 border-black p-4 rounded-xl mt-3 font-bold">
-<button id="btnCriar" onclick="criarSala()" class="w-full bg-black text-white py-4 rounded-xl font-black mt-6">DISPONIBILIZAR CARTELAS</button>
-<p id="status" class="text-xs font-bold text-center mt-3"></p>
+<body class="bg-black text-white min-h-screen">
+<div class="max-w-6xl mx-auto p-4">
+
+<div id="tela-home" class="min-h-[90vh] flex items-center justify-center">
+<div class="bg-white text-black rounded-[24px] p-7 w-full max-w-lg">
+<h1 class="text-4xl font-black">BINGO<span class="bg-black text-white px-2 ml-2">B&W</span></h1>
+<p class="text-sm text-zinc-500 mt-1 mb-6">100% ONLINE REAL - Base PeerJS - Jogador aparece na hora</p>
+<div id="home-criar">
+<label class="text-[11px] font-black">NOME DA SALA</label>
+<input id="inputNomeSala" class="w-full bg-zinc-100 rounded-xl p-3.5 mb-3 font-bold" value="Bingo da Galera">
+<div class="grid grid-cols-2 gap-3 mb-3">
+<div><label class="text-[11px] font-black">TOTAL CARTELAS DISPONIBILIZADAS</label><input id="inputTotal" type="number" value="20" class="w-full bg-zinc-100 rounded-xl p-3.5 font-bold"></div>
+<div><label class="text-[11px] font-black">LIMITE / JOGADOR</label><input id="inputLimite" type="number" value="1" class="w-full bg-zinc-100 rounded-xl p-3.5 font-bold"></div>
+</div>
+<label class="text-[11px] font-black">SEU NOME (ADMIN)</label>
+<input id="inputAdmin" class="w-full bg-zinc-100 rounded-xl p-3.5 mb-5 font-bold" placeholder="Seu nome">
+<button onclick="criarSala()" class="w-full bg-black text-white rounded-xl py-4 font-black">DISPONIBILIZAR CARTELAS + GERAR LINK</button>
+</div>
+<div id="home-link" class="hidden">
+<div class="bg-zinc-100 rounded-xl p-4 mb-4">
+<p class="text-[11px] font-black">LINK PRIVADO - ENVIE PARA JOGADORES:</p>
+<p id="txtLink" class="font-mono text-xs break-all bg-white p-3 rounded-lg border mt-2"></p>
+<div id="qrcodeHome" class="mt-3 flex justify-center bg-white p-3 rounded-xl border"></div>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<button onclick="copiarWhats()" class="bg-[#25D366] text-black rounded-xl py-3.5 font-black">WhatsApp</button>
+<button onclick="entrarComoAdmin()" class="bg-black text-white rounded-xl py-3.5 font-black">ABRIR ADMIN</button>
+</div>
+</div>
 </div>
 </div>
 
-<div id="admin" class="hidden max-w-5xl mx-auto">
-<div class="white-card rounded-2xl p-5 flex flex-col md:flex-row justify-between gap-4">
-<div class="flex-1"><h2 id="tituloSala" class="text-2xl font-black"></h2><p id="estoqueInfo" class="text-sm font-bold"></p><input id="linkConvite" readonly class="w-full mt-3 border-2 border-black p-3 rounded-xl text-xs font-bold"><div class="flex gap-2 mt-3"><button onclick="copiarLink()" class="bg-black text-white px-5 py-2 rounded-xl text-sm font-black">COPIAR LINK</button><span class="border-2 border-black px-4 py-2 rounded-xl text-sm font-black">CÓDIGO: <b id="codigoSala"></b></span></div></div>
-<div class="bg-white p-2 border-2 border-black rounded-xl"><div id="qrcode"></div></div>
+<div id="tela-sala" class="hidden">
+<div class="flex justify-between gap-3 mb-4">
+<div class="bg-white text-black rounded-2xl px-5 py-3 flex-1 flex justify-between items-center">
+<div><h2 id="nomeSalaDisplay" class="font-black"></h2><p id="codigoDisplay" class="text-[11px] font-mono"></p><p id="estoqueDisplay" class="text-[10px] font-bold opacity-60"></p></div>
+<div class="text-right"><span id="statusConexao" class="text-[10px] bg-yellow-200 px-2 py-1 rounded-full font-bold">CONECTANDO...</span><p class="text-[11px] mt-1">Você: <b id="meuNomeDisplay"></b></p></div>
 </div>
-<div class="grid md:grid-cols-12 gap-4 mt-4">
-<div class="md:col-span-5"><div class="black-card rounded-2xl p-4"><div id="ultimoNumero" class="text-6xl font-black text-center py-6">--</div><button onclick="sortear()" class="w-full bg-white text-black py-3 rounded-xl font-black">SORTEAR</button><div id="numerosSorteados" class="flex flex-wrap gap-1 mt-3"></div><button id="btnIniciar" onclick="iniciarPartida()" class="w-full mt-4 bg-white text-black py-3 rounded-xl font-black">🚀 INICIAR PARTIDA</button></div></div>
-<div class="md:col-span-7 black-card rounded-2xl p-4"><h3 class="font-black">👥 JOGADORES - TEMPO REAL</h3><p class="text-xs opacity-70">🔴 VERMELHO = Entrou (nome+marcador) | 🟢 + ✅ VISTO = Clicou PRONTO</p><p id="onlineStatus" class="text-[10px] font-bold mt-1 text-green-400">● ONLINE</p><div id="listaJogadores" class="mt-4 space-y-2"></div></div>
+<button onclick="copiarLinkSala()" class="bg-zinc-800 rounded-2xl px-4 py-3 text-xs font-bold">COPIAR LINK</button>
+</div>
+
+<div id="modalNome" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+<div class="bg-white text-black rounded-[20px] p-6 w-full max-w-sm">
+<h2 class="text-2xl font-black mb-1">Entrar na sala</h2>
+<p id="modalInfo" class="text-xs text-zinc-500 mb-4"></p>
+<input id="modalInputNome" class="w-full bg-zinc-100 rounded-xl p-4 font-bold mb-3" placeholder="Seu nome">
+<p class="text-[11px] font-black mb-2">ESCOLHA SEU MARCADOR + ÍCONE VISTO ✅:</p>
+<div class="grid grid-cols-5 gap-2 mb-4">
+<button onclick="setMarcadorModal('🔴')" class="border-2 border-black p-3 rounded-xl">🔴</button>
+<button onclick="setMarcadorModal('🔵')" class="border-2 border-black p-3 rounded-xl">🔵</button>
+<button onclick="setMarcadorModal('🟢')" class="border-2 border-black p-3 rounded-xl">🟢</button>
+<button onclick="setMarcadorModal('❌')" class="border-2 border-black p-3 rounded-xl">❌</button>
+<button onclick="setMarcadorModal('✅')" class="border-2 border-black p-3 rounded-xl bg-black text-white">✅</button>
+</div>
+<div class="text-center mb-4 text-sm font-black">Marcador: <span id="marcadorModalDisplay">🔴</span></div>
+<button onclick="confirmarNome()" class="w-full bg-black text-white rounded-xl py-4 font-black">ENTRAR NA SALA</button>
+<p class="text-[10px] text-center mt-2 opacity-50">Você aparecerá em 🔴 VERMELHO para o admin</p>
 </div>
 </div>
 
-<div id="player" class="hidden max-w-5xl mx-auto">
-<div id="playerLogin" class="min-h-screen flex items-center justify-center"><div class="white-card rounded-[2rem] p-8 w-full max-w-md"><h1 class="text-3xl font-black text-center">ENTRAR NA SALA</h1><p id="playerSalaNome" class="text-center text-xs font-bold opacity-60 mt-2"></p><input id="nomeJogador" placeholder="SEU NOME" class="w-full border-2 border-black p-4 rounded-xl mt-6 font-bold"><div class="grid grid-cols-5 gap-2 mt-4"><button onclick="setMarcador('🔴')" class="border-2 border-black p-3 rounded-xl">🔴</button><button onclick="setMarcador('🔵')" class="border-2 border-black p-3 rounded-xl">🔵</button><button onclick="setMarcador('🟢')" class="border-2 border-black p-3 rounded-xl">🟢</button><button onclick="setMarcador('❌')" class="border-2 border-black p-3 rounded-xl">❌</button><button onclick="setMarcador('✅')" class="border-2 border-black p-3 rounded-xl bg-black text-white">✅</button></div><div class="text-center mt-3 font-black">MARCADOR: <span id="marcadorAtual" class="text-2xl">🔴</span></div><button onclick="entrarNaSala()" class="w-full bg-black text-white py-4 rounded-xl font-black mt-6">ENTRAR NA SALA</button></div></div>
-<div id="playerEscolha" class="hidden pb-24"><div class="white-card rounded-2xl p-4 mb-4 flex justify-between sticky top-2 z-10"><h2 class="font-black">ESCOLHA SUA CARTELA</h2><span id="playerEstoque" class="font-black"></span></div><div id="gridDisponiveis" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div><div class="fixed bottom-0 left-0 right-0 bg-black border-t-2 border-white p-4 flex justify-between"><span id="escolhidaInfo" class="font-bold text-white">NENHUMA</span><button id="btnPronto" onclick="clicarPronto()" disabled class="bg-[#333] text-[#666] px-10 py-3 rounded-xl font-black">✅ PRONTO</button></div></div>
-<div id="playerJogo" class="hidden"><div class="white-card rounded-2xl p-4 flex justify-between mb-4"><span id="playerNomeDisplay" class="font-black"></span><span class="font-black">ÚLTIMO: <b id="playerUltimo">--</b></span></div><div id="gridJogo" class="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto"></div></div>
+<div class="grid lg:grid-cols-3 gap-4">
+<div class="lg:col-span-2"><div class="bg-white text-black rounded-[20px] p-4"><div class="flex justify-between mb-3"><h3 class="font-black">CARTELAS DISPONIBILIZADAS - <span id="totalDisponibilizadas"></span></h3><div class="flex gap-2 text-[11px]"><span id="livresCount" class="bg-zinc-100 px-2 py-1 rounded-full font-bold"></span><span id="meuLimiteTxt" class="bg-black text-white px-2 py-1 rounded-full font-bold"></span></div></div><div id="gridCartelas" class="grid grid-cols-2 gap-2 max-h-[68vh] overflow-auto"></div></div></div>
+<div class="space-y-4">
+<div id="painelAdmin" class="hidden bg-white text-black rounded-[20px] p-4"><h3 class="font-black mb-2">ADMIN - JOGADORES NA SALA</h3><p class="text-[10px] opacity-60 mb-2">🔴 VERMELHO = Entrou | 🟢 + ✅ VISTO = Pronto</p><div id="listaJogadores" class="space-y-2"></div><hr class="my-4"><div class="flex gap-2"><button onclick="iniciarPartida()" class="flex-1 bg-black text-white rounded-xl py-3 font-black text-sm">INICIAR</button><button onclick="sortearNumero()" class="flex-1 bg-zinc-200 text-black rounded-xl py-3 font-black text-sm">SORTEAR</button></div></div>
+<div class="bg-white text-black rounded-[20px] p-4"><h3 class="font-black mb-2">MINHA ÁREA</h3><div id="minhasCartelasLista" class="space-y-2 mb-3"></div><button id="btnPronto" onclick="ficarPronto()" class="w-full bg-black text-white rounded-xl py-3.5 font-black flex items-center justify-center gap-2">✅ ESTOU PRONTO - VISTO</button><p id="txtPronto" class="hidden text-center font-black text-green-600 mt-2">✅ VISTO - PRONTO PARA PARTIDA</p></div>
+<div class="bg-[#1a1a1a] border border-zinc-800 rounded-[20px] p-4"><h3 class="font-black mb-2 text-zinc-400 text-xs">SORTEIO AO VIVO</h3><div id="ultimoNumero" class="text-7xl font-black text-center py-4 bg-white text-black rounded-xl mb-3">--</div><p class="text-[11px] text-zinc-500 mb-1"><span id="totalSorteados">0</span> / 75</p><div id="bolasSorteadas" class="flex flex-wrap gap-1.5"></div></div>
+</div>
+</div>
+</div>
 </div>
 
 <script>
-function hash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))%1000000; return h; }
-function seededRandom(s){ return Math.abs(Math.sin(s)*10000)%1; }
-function gerarCartela(seedStr){
-  const ranges=[[1,15],[16,30],[31,45],[46,60],[61,75]];
-  let base=hash(seedStr);
-  let cols=ranges.map(([min,max], ci)=>{ let arr=[]; let t=0; while(arr.length<5){ let n=Math.floor(seededRandom(base+ci*100+t*7)*(max-min+1))+min; if(!arr.includes(n)) arr.push(n); t++; } return arr; });
-  let card=[]; for(let r=0;r<5;r++){ let row=[]; for(let c=0;c<5;c++) row.push(cols[c][r]); card.push(row);} card[2][2]='FREE';
-  return {id: seedStr, numeros:card, marcados:Array(5).fill(0).map((_,i)=>Array(5).fill(false).map((__,j)=>i==2&&j==2))};
-}
+let peer=null, connAdmin=null, conexoes={}, souAdmin=false, codigoSala=null, meuId=null, meuNome=null, marcadorModal='🔴';
+let estadoSala={nome:'', total:20, limitePadrao:1, cartelas:[], jogadores:[], numerosSorteados:[], status:'lobby'};
 
-let state=null, meuId=localStorage.getItem('bingo_bw_v2_id'), marcador='🔴', cartelaSel=null, npointId=null, codigoSalaAtual=null;
-const NPOINT_API='https://api.npoint.io';
-
-async function criarSala(){
-  const btn=document.getElementById('btnCriar');
-  const status=document.getElementById('status');
-  try{
-    btn.disabled=true; btn.innerText='CRIANDO SALA ONLINE...'; status.innerText='Conectando no servidor...';
-    const nome=document.getElementById('nomeSala').value||'BINGO B&W';
-    const total=parseInt(document.getElementById('totalCartelas').value)||20;
-    const codigo=Math.random().toString(36).substring(2,6).toUpperCase();
-    let pool=[]; for(let i=0;i<total;i++) pool.push(gerarCartela(codigo+'-'+i));
-    state={sala:{nome,codigo,total}, pool, jogadores:[], sorteados:[], iniciada:false, created:Date.now()};
-
-    // Cria sala no servidor npoint.io - 100% online
-    const res=await fetch(NPOINT_API, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(state)});
-    if(!res.ok) throw new Error('Falha no servidor');
-    const data=await res.json();
-    npointId=data.id;
-    localStorage.setItem('bingo_npoint_'+codigo, npointId);
-    status.innerText='✅ SALA CRIADA COM '+total+' CARTELAS!';
-    setTimeout(()=>{ location.href=location.pathname+'?admin='+codigo+'&np='+npointId; },600);
-  }catch(e){
-    console.error(e);
-    status.innerText='Erro: '+e.message+' - Tentando modo local...';
-    // Fallback local se npoint falhar
-    const nome=document.getElementById('nomeSala').value||'BINGO B&W';
-    const total=parseInt(document.getElementById('totalCartelas').value)||20;
-    const codigo=Math.random().toString(36).substring(2,6).toUpperCase();
-    let pool=[]; for(let i=0;i<total;i++) pool.push(gerarCartela(codigo+'-'+i));
-    state={sala:{nome,codigo,total}, pool, jogadores:[], sorteados:[], iniciada:false};
-    localStorage.setItem('bingo_room_'+codigo, JSON.stringify(state));
-    setTimeout(()=>{ location.href=location.pathname+'?admin='+codigo; },600);
+function genCartelas(total){
+  const cartelas=[];
+  for(let i=0;i<total;i++){
+    const nums=[...Array(75).keys()].map(n=>n+1).sort(()=>0.5-Math.random()).slice(0,24);
+    const grid=[]; let idx=0;
+    for(let r=0;r<5;r++){ let row=[]; for(let c=0;c<5;c++){ if(r==2&&c==2) row.push('FREE'); else row.push(nums[idx++]); } grid.push(row); }
+    cartelas.push({id:i+1, numero:String(i+1).padStart(2,'0'), grid, donoId:null, donoNome:null});
   }
+  return cartelas;
+}
+function getLimite(j){ return j.limite!=null? j.limite : estadoSala.limitePadrao; }
+
+function criarSala(){
+  const nome=document.getElementById('inputNomeSala').value||'Bingo';
+  const total=parseInt(document.getElementById('inputTotal').value)||20;
+  const limite=parseInt(document.getElementById('inputLimite').value)||1;
+  const adminNome=document.getElementById('inputAdmin').value||'Admin';
+  const codigo=Math.random().toString(36).substring(2,7).toUpperCase()+'-'+Math.random().toString(36).substring(2,4).toUpperCase();
+  estadoSala={nome, total, limitePadrao:limite, cartelas:genCartelas(total), jogadores:[{id:'admin-'+codigo, nome:adminNome, limite:null, status:'pronto', marcador:'👑', cartelas:[], limite:limite}], numerosSorteados:[], status:'lobby', codigo};
+  peer=new Peer('bingo-'+codigo);
+  peer.on('open', id=>{
+    codigoSala=codigo; souAdmin=true; meuId='admin-'+codigo; meuNome=adminNome;
+    const link=location.origin+location.pathname+'?sala='+codigo;
+    document.getElementById('txtLink').innerText=link;
+    document.getElementById('qrcodeHome').innerHTML=''; new QRCode(document.getElementById('qrcodeHome'), {text:link, width:120, height:120});
+    document.getElementById('home-criar').classList.add('hidden');
+    document.getElementById('home-link').classList.remove('hidden');
+    window._linkSala=link;
+    peer.on('connection', conn=>{
+      conn.on('open', ()=>{
+        conexoes[conn.peer]=conn;
+        conn.on('data', data=>handleDataAdmin(data, conn));
+        conn.on('close', ()=>{ delete conexoes[conn.peer]; broadcastEstado(); });
+        conn.send({type:'estado', estado:estadoSala});
+      });
+    });
+  });
 }
 
-async function fetchState(){
-  if(!npointId) return null;
-  try{
-    const res=await fetch(NPOINT_API+'/'+npointId);
-    if(!res.ok) return null;
-    return await res.json();
-  }catch(e){ return null; }
-}
-
-async function saveState(){
-  if(!npointId ||!state) return;
-  try{
-    await fetch(NPOINT_API+'/'+npointId, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(state)});
-  }catch(e){ console.error('Erro ao salvar',e); }
-  // Também salva local
-  localStorage.setItem('bingo_room_'+state.sala.codigo, JSON.stringify(state));
-}
-
-function setMarcador(m){ marcador=m; document.getElementById('marcadorAtual').innerText=m; }
-
-async function mostrarAdmin(codigo, np){
-  codigoSalaAtual=codigo; npointId=np||localStorage.getItem('bingo_npoint_'+codigo);
-  if(!npointId){
-    // tenta local
-    state=JSON.parse(localStorage.getItem('bingo_room_'+codigo)||'null');
-    if(!state){ alert('Sala não encontrada'); location.href=location.pathname; return; }
-  } else {
-    state=await fetchState();
-  }
-  if(!state) return;
-  document.getElementById('setup').classList.add('hidden');
-  document.getElementById('admin').classList.remove('hidden');
-  document.getElementById('tituloSala').innerText=state.sala.nome;
-  document.getElementById('codigoSala').innerText=state.sala.codigo;
-  const link=location.origin+location.pathname+'?jogo='+state.sala.codigo+'&total='+state.sala.total+'&np='+npointId;
-  document.getElementById('linkConvite').value=link;
-  document.getElementById('qrcode').innerHTML=''; new QRCode(document.getElementById('qrcode'), {text:link, width:110, height:110});
-  renderAdmin();
-  // Listener tempo real a cada 1.5s
-  setInterval(async()=>{
-    const fresh=npointId? await fetchState() : JSON.parse(localStorage.getItem('bingo_room_'+codigo)||'null');
-    if(fresh){ state=fresh; renderAdmin(); }
-  },1500);
-}
-
-function renderAdmin(){
-  if(!state) return;
-  const disp=state.pool.filter(c=>!state.jogadores.some(j=>j.cartelas.some(jc=>jc.id===c.id)));
-  document.getElementById('estoqueInfo').innerText=`DISPONIBILIZADAS: ${state.sala.total} | LIVRES: ${disp.length} | JOGADORES: ${state.jogadores.length}`;
-  document.getElementById('numerosSorteados').innerHTML=state.sorteados.map(n=>`<span class="bg-black text-white border border-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black">${n}</span>`).join('');
-  if(state.sorteados.length) document.getElementById('ultimoNumero').innerText=state.sorteados[state.sorteados.length-1];
-  document.getElementById('listaJogadores').innerHTML=state.jogadores.map(j=>{
-    const isPronto=j.status==='pronto';
-    const cor=isPronto?'bg-white text-black border-2 border-black':'bg-[#111] text-white border border-red-500';
-    const bola=isPronto?'🟢':'🔴';
-    const visto=isPronto?'✅ VISTO':'';
-    return `<div class="p-3 rounded-xl ${cor}"><span class="font-black text-sm">${bola} ${j.nomes.join(', ')} {${j.cartelas.length}} - ${j.marcador} - ${j.status.toUpperCase()} ${visto}</span></div>`;
-  }).join('') || '<p class="text-xs opacity-60">Nenhum jogador entrou. Envie o link para outro celular.</p>';
-}
-
-async function initPlayer(codigo, np, total){
-  codigoSalaAtual=codigo; npointId=np||localStorage.getItem('bingo_npoint_'+codigo);
-  if(npointId){
-    state=await fetchState();
-  }
-  if(!state){
-    const totalFinal=total||20;
-    let pool=[]; for(let i=0;i<totalFinal;i++) pool.push(gerarCartela(codigo+'-'+i));
-    state={sala:{nome:'Sala '+codigo, codigo, total:totalFinal}, pool, jogadores:[], sorteados:[], iniciada:false};
-  }
-  document.getElementById('setup').classList.add('hidden');
-  document.getElementById('player').classList.remove('hidden');
-  document.getElementById('playerSalaNome').innerText=`SALA ${codigo} - ${state.sala.total} CARTELAS`;
-  setInterval(async()=>{
-    const fresh=npointId? await fetchState() : JSON.parse(localStorage.getItem('bingo_room_'+codigo)||'null');
-    if(fresh){ state=fresh; if(meuId) renderPlayer(); }
-  },1500);
-  if(meuId && state.jogadores.find(j=>j.id===meuId)) renderPlayer();
-}
-
-async function entrarNaSala(){
-  const nome=document.getElementById('nomeJogador').value.trim(); if(!nome) return alert('NOME');
-  let j={id:Date.now().toString(), nomes:[nome], cartelas:[], marcador, status:'na_sala'};
-  state.jogadores.push(j); meuId=j.id; localStorage.setItem('bingo_bw_v2_id', meuId);
-  await saveState();
-  renderPlayer();
-}
-
-function renderPlayer(){
-  const eu=state.jogadores.find(j=>j.id===meuId); if(!eu) return;
-  if(eu.status==='na_sala'){
-    document.getElementById('playerLogin').classList.add('hidden');
-    document.getElementById('playerEscolha').classList.remove('hidden');
-    document.getElementById('playerJogo').classList.add('hidden');
-    const disp=state.pool.filter(c=>!state.jogadores.some(j=>j.cartelas.some(jc=>jc.id===c.id)));
-    document.getElementById('playerEstoque').innerText=disp.length;
-    document.getElementById('gridDisponiveis').innerHTML=disp.map(card=>`
-      <div onclick="selecionarCartela('${card.id}')" id="mini-${card.id}" class="cartela white-card rounded-xl p-2"><div class="grid grid-cols-5 gap-[2px]">${card.numeros.map((row,r)=>row.map((num,c)=>`<div class="text-[9px] text-center py-1 border border-black ${r==2&&c==2?'bg-black text-white':'bg-white text-black'}">${num==='FREE'?'★':num}</div>`).join('')).join('')}</div></div>`).join('') || '<p class="col-span-5 text-center py-10">Acabaram as cartelas!</p>';
-  } else {
-    document.getElementById('playerLogin').classList.add('hidden');
-    document.getElementById('playerEscolha').classList.add('hidden');
-    document.getElementById('playerJogo').classList.remove('hidden');
-    document.getElementById('playerNomeDisplay').innerText=eu.nomes.join(', ')+' - '+eu.cartelas.length+' CARTELA(S) ✅';
-    document.getElementById('playerUltimo').innerText=state.sorteados[state.sorteados.length-1]||'--';
-    document.getElementById('gridJogo').innerHTML=eu.cartelas.map((card,ci)=>`<div class="white-card rounded-[1.5rem] p-4"><div class="grid grid-cols-5 gap-1">${['B','I','N','G','O'].map(l=>`<div class="text-center font-black text-xs">${l}</div>`).join('')}${card.numeros.map((row,r)=>row.map((num,c)=>`<div onclick="marcar(${ci},${r},${c})" class="cell ${card.marcados[r][c]?'marked':''}">${num==='FREE'?'★':num}${card.marcados[r][c]?`<div class="absolute inset-0 flex items-center justify-center text-xl">${eu.marcador}</div>`:''}</div>`).join('')).join('')}</div></div>`).join('');
-  }
-}
-
-function selecionarCartela(id){ document.querySelectorAll('.cartela').forEach(el=>el.classList.remove('sel')); document.getElementById('mini-'+id)?.classList.add('sel'); cartelaSel=id; document.getElementById('escolhidaInfo').innerText=id.slice(-4); const btn=document.getElementById('btnPronto'); btn.disabled=false; btn.classList.remove('bg-[#333]','text-[#666]'); btn.classList.add('bg-white','text-black'); }
-async function clicarPronto(){ const eu=state.jogadores.find(j=>j.id===meuId); if(!eu||!cartelaSel) return; const card=state.pool.find(c=>c.id===cartelaSel); if(!card) return alert('JÁ FOI PEGA'); if(state.jogadores.some(j=>j.cartelas.some(jc=>jc.id===card.id))) return alert('JÁ ESCOLHIDA'); eu.cartelas.push(JSON.parse(JSON.stringify(card))); eu.status='pronto'; cartelaSel=null; await saveState(); renderPlayer(); }
-async function marcar(ci,r,c){ const eu=state.jogadores.find(j=>j.id===meuId); if(eu.cartelas[ci].numeros[r][c]==='FREE') return; eu.cartelas[ci].marcados[r][c]=!eu.cartelas[ci].marcados[r][c]; await saveState(); renderPlayer(); }
-async function sortear(){ if(!state) return; if(!state.iniciada) state.iniciada=true; let disp=[...Array(75)].map((_,i)=>i+1).filter(n=>!state.sorteados.includes(n)); if(!disp.length) return; state.sorteados.push(disp[Math.floor(Math.random()*disp.length)]); await saveState(); renderAdmin(); }
-async function iniciarPartida(){ if(!state) return; state.iniciada=true; await saveState(); document.getElementById('btnIniciar').innerText='✅ PARTIDA INICIADA'; }
-function copiarLink(){ navigator.clipboard.writeText(document.getElementById('linkConvite').value); alert('Link copiado!'); }
+function copiarWhats(){ const t=`🎲 Entra no meu Bingo!\nSala: ${estadoSala.nome} - ${estadoSala.total} cartelas disponibilizadas\nLink: ${window._linkSala}`; navigator.clipboard.writeText(t); alert('Copiado'); }
+function entrarComoAdmin(){ location.href=location.pathname+'?sala='+codigoSala+'&admin=1'; }
 
 const params=new URLSearchParams(location.search);
-if(params.get('admin')){ mostrarAdmin(params.get('admin'), params.get('np')); }
-else if(params.get('jogo')){ initPlayer(params.get('jogo'), params.get('np'), parseInt(params.get('total'))||0); }
+if(params.get('sala')){
+  document.getElementById('tela-home').classList.add('hidden');
+  document.getElementById('tela-sala').classList.remove('hidden');
+  codigoSala=params.get('sala');
+  if(params.get('admin')==='1'){
+    const saved=localStorage.getItem('bingo_estado_'+codigoSala);
+    if(saved){ estadoSala=JSON.parse(saved); souAdmin=true; meuId='admin-'+codigoSala; meuNome=estadoSala.jogadores[0].nome; iniciarPeerAdmin(); }
+    else{ alert('Admin precisa criar novamente'); location.href=location.pathname; }
+  } else { iniciarPeerJogador(); }
+  document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala;
+}
+
+function iniciarPeerAdmin(){
+  if(peer) return;
+  peer=new Peer('bingo-'+codigoSala);
+  peer.on('open', ()=>{
+    document.getElementById('statusConexao').innerText='ADMIN ONLINE';
+    document.getElementById('statusConexao').className='text-[10px] bg-green-400 text-black px-2 py-1 rounded-full font-bold';
+    document.getElementById('painelAdmin').classList.remove('hidden');
+    document.getElementById('modalNome').classList.add('hidden');
+    document.getElementById('meuNomeDisplay').innerText=meuNome;
+    document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome;
+    peer.on('connection', conn=>{
+      conexoes[conn.peer]=conn;
+      conn.on('open', ()=>{
+        conn.on('data', data=>handleDataAdmin(data, conn));
+        conn.send({type:'estado', estado:estadoSala});
+      });
+    });
+    render();
+  });
+}
+
+function iniciarPeerJogador(){
+  document.getElementById('modalInfo').innerText='Sala privada: '+codigoSala;
+  peer=new Peer();
+  peer.on('open', myId=>{
+    meuId=myId;
+    connAdmin=peer.connect('bingo-'+codigoSala);
+    connAdmin.on('open', ()=>{
+      document.getElementById('statusConexao').innerText='CONECTADO';
+      document.getElementById('statusConexao').className='text-[10px] bg-green-400 text-black px-2 py-1 rounded-full font-bold';
+      connAdmin.on('data', data=>handleDataJogador(data));
+    });
+    connAdmin.on('close', ()=>{ document.getElementById('statusConexao').innerText='ADMIN OFF'; });
+  });
+}
+
+function setMarcadorModal(m){ marcadorModal=m; document.getElementById('marcadorModalDisplay').innerText=m; }
+
+function confirmarNome(){
+  const nome=document.getElementById('modalInputNome').value.trim(); if(!nome) return;
+  meuNome=nome;
+  document.getElementById('meuNomeDisplay').innerText=nome;
+  document.getElementById('modalNome').classList.add('hidden');
+  if(souAdmin){ render(); }
+  else{ if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcador:marcadorModal}); }
+}
+
+function handleDataAdmin(data, conn){
+  if(data.type==='entrar'){
+    let j=estadoSala.jogadores.find(x=>x.id===data.id);
+    if(!j){ j={id:data.id, nome:data.nome, marcador:data.marcador||'🔴', limite:null, status:'pendente', cartelas:[]}; estadoSala.jogadores.push(j); }
+    broadcastEstado();
+  }
+  if(data.type==='reservar'){ toggleCartelaServer(data.cartId, data.jogId); }
+  if(data.type==='pronto'){
+    const j=estadoSala.jogadores.find(x=>x.id===data.jogId);
+    if(j){ j.status='pronto'; j.marcador=data.marcador||j.marcador; }
+    broadcastEstado();
+  }
+}
+
+function toggleCartelaServer(cartId, jogId){
+  const cart=estadoSala.cartelas.find(c=>c.id===cartId);
+  const jog=estadoSala.jogadores.find(j=>j.id===jogId);
+  if(!cart||!jog) return;
+  if(cart.donoId && cart.donoId!==jogId) return;
+  if(cart.donoId===jogId){ cart.donoId=null; cart.donoNome=null; jog.cartelas=jog.cartelas.filter(id=>id!==cartId); }
+  else{
+    if(jog.cartelas.length>=getLimite(jog)) return;
+    cart.donoId=jogId; cart.donoNome=jog.nome; jog.cartelas.push(cartId);
+  }
+  jog.status='pendente';
+  broadcastEstado();
+}
+
+function broadcastEstado(){
+  localStorage.setItem('bingo_estado_'+codigoSala, JSON.stringify(estadoSala));
+  Object.values(conexoes).forEach(c=>{ try{ c.send({type:'estado', estado:estadoSala}); }catch(e){} });
+  render();
+}
+
+function handleDataJogador(data){
+  if(data.type==='estado'){
+    estadoSala=data.estado;
+    document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome;
+    render();
+  }
+}
+
+function toggleCartela(id){
+  if(souAdmin){ toggleCartelaServer(id, meuId); }
+  else{ connAdmin.send({type:'reservar', cartId:id, jogId:meuId}); }
+}
+
+function ficarPronto(){
+  if(souAdmin){
+    const j=estadoSala.jogadores.find(x=>x.id===meuId);
+    if(j) j.status='pronto';
+    broadcastEstado();
+  } else {
+    connAdmin.send({type:'pronto', jogId:meuId, marcador:marcadorModal});
+  }
+}
+
+function addLimite(jogId, delta){
+  const j=estadoSala.jogadores.find(x=>x.id===jogId);
+  const atual=j.limite!=null? j.limite : estadoSala.limitePadrao;
+  let n=atual+delta; if(n<1) n=1; if(n>10) n=10;
+  j.limite=n; broadcastEstado();
+}
+
+function iniciarPartida(){ estadoSala.status='jogando'; broadcastEstado(); alert('Partida iniciada!'); }
+function sortearNumero(){
+  const todos=[...Array(75).keys()].map(n=>n+1);
+  const disp=todos.filter(n=>!estadoSala.numerosSorteados.includes(n));
+  if(!disp.length){ alert('Acabou'); return; }
+  const num=disp[Math.floor(Math.random()*disp.length)];
+  estadoSala.numerosSorteados.push(num);
+  broadcastEstado();
+  if('vibrate' in navigator) navigator.vibrate(300);
+}
+function copiarLinkSala(){ const link=location.origin+location.pathname+'?sala='+codigoSala; navigator.clipboard.writeText(link); alert('Link copiado'); }
+
+function render(){
+  if(!estadoSala.cartelas) return;
+  const eu=estadoSala.jogadores.find(j=>j.id===meuId);
+  if(!eu &&!souAdmin) return;
+  const jogadorAtual=eu||{cartelas:[], id:meuId};
+  document.getElementById('totalDisponibilizadas').innerText=estadoSala.total;
+  document.getElementById('estoqueDisplay').innerText=`${estadoSala.total} disponibilizadas | ${estadoSala.cartelas.filter(c=>!c.donoId).length} livres`;
+  document.getElementById('livresCount').innerText=`${estadoSala.cartelas.filter(c=>!c.donoId).length} livres de ${estadoSala.total}`;
+  document.getElementById('meuLimiteTxt').innerText=`Meu limite: ${eu?getLimite(eu):estadoSala.limitePadrao} - Total disponibilizado: ${estadoSala.total}`;
+
+  const grid=document.getElementById('gridCartelas');
+  grid.innerHTML='';
+  estadoSala.cartelas.forEach(cart=>{
+    const ocupada=cart.donoId && cart.donoId!==meuId;
+    const minha=cart.donoId===meuId;
+    const div=document.createElement('div');
+    div.className=`rounded-xl p-2 border-2 cursor-pointer ${minha?'bg-green-100 border-green-600':'bg-zinc-50 border-zinc-200'} ${ocupada?'opacity-40 pointer-events-none':''}`;
+    let html=`<div class='flex justify-between text-[10px] font-black mb-1'><span>${cart.numero}</span><span class='truncate'>${cart.donoNome?cart.donoNome.substring(0,8):'LIVRE - ${estadoSala.total} disponiveis'}</span></div><div class='grid grid-cols-5 gap-[1px] text-[9px] font-bold'>`;
+    for(let l of ['B','I','N','G','O']) html+=`<div class='bg-black text-white text-center py-[2px]'>${l}</div>`;
+    cart.grid.forEach(row=>{ row.forEach(v=>{ const marcado=estadoSala.numerosSorteados.includes(v); html+=`<div class='border bg-white text-center py-1 ${v==='FREE'?'bg-zinc-200':''} ${marcado&&v!=='FREE'?'bg-yellow-300':''}'>${v}</div>`; }); });
+    html+=`</div>`;
+    div.innerHTML=html;
+    div.onclick=()=>toggleCartela(cart.id);
+    grid.appendChild(div);
+  });
+
+  const minhasDiv=document.getElementById('minhasCartelasLista');
+  if(minhasDiv){
+    minhasDiv.innerHTML='';
+    (jogadorAtual.cartelas||[]).forEach(id=>{
+      const c=estadoSala.cartelas.find(x=>x.id===id);
+      if(c) minhasDiv.innerHTML+=`<div class='flex justify-between text-xs bg-zinc-100 rounded-lg p-2'><span>Cartela ${c.numero} - ${c.id}/${estadoSala.total}</span><button onclick='toggleCartela(${c.id})' class='text-red-500 font-bold'>X</button></div>`;
+    });
+  }
+
+  if(souAdmin){
+    const lj=document.getElementById('listaJogadores');
+    lj.innerHTML='';
+    estadoSala.jogadores.forEach(j=>{
+      const pronto=j.status==='pronto';
+      const bola=pronto?'🟢':'🔴';
+      const visto=pronto?'✅ VISTO':'';
+      lj.innerHTML+=`<div class='flex items-center justify-between p-2 rounded-xl ${pronto?'bg-green-100 border-2 border-green-600':'bg-red-100 border-2 border-red-400'}'><div class='flex items-center gap-2'><span>${bola}</span><span class='text-sm font-bold'>${j.nome} ${j.marcador||''}</span><span class='text-[10px]'>${j.cartelas.length}/${getLimite(j)} ${visto}</span></div><div class='flex gap-1'><button onclick='addLimite("${j.id}",1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>+1 LIBERAR EXTRA</button><button onclick='addLimite("${j.id}",-1)' class='bg-white border px-2 py-1 rounded text-[10px]'>-1</button></div></div>`;
+    });
+  }
+
+  const btn=document.getElementById('btnPronto');
+  const txt=document.getElementById('txtPronto');
+  if(eu && eu.status==='pronto'){ btn.classList.add('hidden'); txt.classList.remove('hidden'); }
+  else{
+    btn.classList.remove('hidden'); txt.classList.add('hidden');
+    if(eu) btn.disabled=(eu.cartelas.length===0);
+  }
+
+  document.getElementById('ultimoNumero').innerText=estadoSala.numerosSorteados.length? estadoSala.numerosSorteados[estadoSala.numerosSorteados.length-1] : '--';
+  document.getElementById('totalSorteados').innerText=estadoSala.numerosSorteados.length;
+  document.getElementById('bolasSorteadas').innerHTML=estadoSala.numerosSorteados.map(n=>`<span class='bg-white text-black px-2.5 py-1 rounded-full text-xs font-black'>${n}</span>`).join('');
+}
 </script>
 </body>
 </html>
