@@ -127,28 +127,26 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 <div class="grid lg:grid-cols-3 gap-4">
 <div id="colCartelasContainer" class="lg:col-span-2">
 <div id="colCartelas"><div class="bg-white text-black rounded-[20px] p-4"><div class="flex justify-between mb-3"><h3 class="font-black">CARTELAS - <span id="totalDisponibilizadas"></span></h3><span id="livresCount" class="bg-zinc-100 px-2 py-1 rounded-full font-bold text-[11px]"></span></div><div id="gridCartelas" class="grid grid-cols-2 gap-2 max-h-[68vh] overflow-auto"></div></div></div>
-<div id="adminRoleta" class="hidden bg-white text-black rounded-[20px] p-6">
+<div id="adminRoleta" class="hidden bg-white text-black rounded-[20px] p-6 text-center">
 <div class="flex justify-between items-center mb-4 pb-3 border-b">
   <div class="text-left">
     <span class="text-[10px] font-black opacity-60 uppercase block">Configuração da Sala</span>
-    <h3 id="nomeSalaRoleta" class="font-black text-lg"></h3>
+    <h3 id="nomeSalaRoleta" class="font-black text-base"></h3>
   </div>
   <div class="flex gap-2">
-    <button onclick="toggleModalCartelasAdmin()" class="bg-black text-white rounded-xl px-4 py-2 text-xs font-black">CARTELAS</button>
-    <button onclick="copiarLinkSala()" class="bg-zinc-800 text-white rounded-xl px-4 py-2 text-xs font-black">LINK</button>
+    <button onclick="toggleModalCartelasAdmin()" class="bg-black text-white rounded-xl px-3 py-1.5 text-xs font-black">CARTELAS</button>
+    <button onclick="copiarLinkSala()" class="bg-zinc-800 text-white rounded-xl px-3 py-1.5 text-xs font-black">LINK</button>
   </div>
 </div>
-<button onclick="abrirConferirBingo()" class="w-full bg-yellow-400 text-black rounded-xl py-3.5 font-black text-sm mb-4 shadow">🔍 CONFERIR BINGO</button>
-<div class="text-center">
+<button onclick="abrirConferirBingo()" class="w-full bg-yellow-400 text-black rounded-xl py-3 font-black text-sm mb-4 shadow">🔍 CONFERIR BINGO</button>
 <h2 class="text-2xl font-black mb-4">🎱 GLOBO SORTEADOR</h2>
 <div id="bolaGirando" class="text-8xl font-black bg-black text-white rounded-full w-40 h-40 flex items-center justify-center mx-auto mb-4">--</div>
 <div class="flex gap-2 mb-3">
-<button id="btnGirar" onclick="iniciarGiro()" class="flex-1 bg-black text-white py-4 rounded-xl font-black">🎰 GIRAR</button>
-<button id="btnParar" onclick="pararGiro()" class="hidden flex-1 bg-red-600 text-white py-4 rounded-xl font-black">🛑 PARAR</button>
-<button onclick="sortearNumero()" class="flex-1 bg-zinc-200 text-black py-4 rounded-xl font-black">🎲 SORTEAR</button>
+<button id="btnGirar" onclick="iniciarGiro()" class="flex-1 bg-black text-white py-3 rounded-xl font-black text-sm">🎰 GIRAR</button>
+<button id="btnParar" onclick="pararGiro()" class="hidden flex-1 bg-red-600 text-white py-3 rounded-xl font-black text-sm">🛑 PARAR</button>
+<button onclick="sortearNumero()" class="flex-1 bg-zinc-200 text-black py-3 rounded-xl font-black text-sm">🎲 SORTEAR</button>
 </div>
 <button onclick="confirmarNovaPartida()" class="w-full bg-zinc-100 text-black border-2 border-zinc-300 rounded-xl py-3 font-black text-sm mb-4">🔄 NOVA</button>
-</div>
 <div id="painelSorteadosAdminDentro" class="mt-4 text-left">
 <h3 class="font-black mb-2">🎱 SORTEADOS (<span id="totalSorteadosAdminDentro">0</span>/75)</h3>
 <div id="bolasSorteadasAdminDentro" class="flex flex-wrap gap-1.5"></div>
@@ -156,14 +154,11 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 </div>
 </div>
 <div class="space-y-4">
-<div id="painelAdmin" class="hidden bg-white text-black rounded-[20px] p-4 lg:hidden">
-<h3 class="font-black mb-1">ADMIN - JOGADORES</h3>
-<div id="listaJogadoresMobile" class="space-y-2"></div>
-</div>
-<div id="painelAdminDesktop" class="hidden bg-white text-black rounded-[20px] p-4">
+<div id="painelAdmin" class="hidden bg-white text-black rounded-[20px] p-4">
 <h3 class="font-black mb-1">ADMIN - JOGADORES</h3>
 <div id="listaJogadores" class="space-y-2 mb-3"></div>
-<div id="painelAdminBotoes" class="space-y-2">
+<div id="listaJogadoresMobile" class="space-y-2 hidden"></div>
+<div class="space-y-2 mt-4">
 <button onclick="enviarAlertaConvidado()" class="w-full bg-red-600 text-white rounded-xl py-3 font-black text-sm">🚨 ALERTAR</button>
 <button onclick="iniciarPartida()" class="w-full bg-black text-white rounded-xl py-3 font-black text-sm">INICIAR</button>
 </div>
@@ -306,7 +301,7 @@ function copiarWhats(){const t=`🎉 Bingo Feliz!\nSala: ${estadoSala.nome}\nNú
 function entrarComoAdmin(){
   if(!codigoSala) return;
   localStorage.setItem('bingo_admin_sessao', JSON.stringify({codigo:codigoSala, tela:'sala', souAdmin:true}));
-  document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('painelAdminDesktop').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('painelConvidado').classList.add('hidden'); document.getElementById('painelSorteioGeral').classList.add('hidden'); souAdmin=true; meuId='admin-'+codigoSala; atualizarStatusConexao(); document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; render();
+  document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden'); document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('painelConvidado').classList.add('hidden'); document.getElementById('painelSorteioGeral').classList.add('hidden'); souAdmin=true; meuId='admin-'+codigoSala; atualizarStatusConexao(); document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome; document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; render();
 }
 function entrarComoConvidadoPorCodigo(){
   const codigo=document.getElementById('inputEntrarSala').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
@@ -325,7 +320,7 @@ if(params.get('sala')){
     const estadoSalvo=localStorage.getItem('bingo_estado_guest_'+codigoSala);
     if(estadoSalvo){ try{ estadoSala=JSON.parse(estadoSalvo); }catch(e){} }
     iniciarPeerJogador();
-    document.getElementById('btnCopiarLink').classList.add('hidden'); document.getElementById('painelAdminDesktop').classList.add('hidden'); document.getElementById('painelSorteadosAdmin').classList.add('hidden'); document.getElementById('painelConvidado').classList.remove('hidden');
+    document.getElementById('btnCopiarLink').classList.add('hidden'); document.getElementById('painelAdmin').classList.add('hidden'); document.getElementById('painelSorteadosAdmin').classList.add('hidden'); document.getElementById('painelConvidado').classList.remove('hidden');
     if(sessao){
       try{
         const s=JSON.parse(sessao);
@@ -364,7 +359,7 @@ function iniciarPeerAdmin(){
   peer=new Peer('bingo-'+codigoSala);
   peer.on('open', ()=>{
     atualizarStatusConexao();
-    document.getElementById('painelAdminDesktop').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden');
+    document.getElementById('painelAdmin').classList.remove('hidden'); document.getElementById('painelSorteadosAdmin').classList.remove('hidden'); document.getElementById('modalNome').classList.add('hidden');
     document.getElementById('meuNomeDisplay').innerText='Admin'; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome;
     peer.on('connection', conn=>{
       conn.on('open', ()=>{
@@ -719,7 +714,7 @@ function excluirJogador(jogId){
     broadcastEstado();
   }
 }
-function iniciarPartida(){ estadoSala.status='jogando'; broadcastEstado(); alert('Partida iniciada! Cartelas foram para o painel da roleta.'); }
+function iniciarPartida(){ estadoSala.status='jogando'; broadcastEstado(); alert('Partida iniciada! Cartelas foram para o botão Cartelas.'); }
 function confirmarNovaPartida(){
   if(confirm("Deseja iniciar um NOVO JOGO na mesma sala? Os números sorteados serão zerados.")){
     estadoSala.numerosSorteados=[];
@@ -842,7 +837,6 @@ function render(){
   if(btnCartelas) btnCartelas.innerText=`CARTELAS (${livres})`;
   const btnCartelasHome=document.getElementById('btnCartelasHome');
   if(btnCartelasHome) btnCartelasHome.innerText=`CARTELAS (${livres})`;
-  
   const colCartelas=document.getElementById('colCartelas');
   const roleta=document.getElementById('adminRoleta');
   if(souAdmin && (estadoSala.status==='jogando' || estadoSala.status==='encerrado')){
