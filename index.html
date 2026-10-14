@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo Feliz</title>
+<title>Bingo Feliz V7</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -140,8 +140,7 @@ function genCartelas(total){
     const colN=numerosDaFaixa(31,45,4);
     const colG=numerosDaFaixa(46,60,5);
     const colO=numerosDaFaixa(61,75,5);
-    const grid=[];
-    let idxN=0;
+    const grid=[]; let idxN=0;
     for(let r=0;r<5;r++){
       let row=[];
       row.push(colB[r]);
@@ -156,7 +155,6 @@ function genCartelas(total){
   }
   return cartelas;
 }
-
 function getLimite(j){return j.limite!=null? j.limite : estadoSala.limitePadrao;}
 function criarSala(){
   const senha=document.getElementById('inputSenha').value;
@@ -189,10 +187,11 @@ function setMarcadorModal(m){ marcadorModal=m; document.getElementById('marcador
 function setCorIcone(cor){ corIcone=cor; document.getElementById('marcadorModalDisplay').style.color=cor; }
 function confirmarNome(){ const nome=document.getElementById('modalInputNome').value.trim(); if(!nome) return; meuNome=nome; document.getElementById('meuNomeDisplay').innerText=nome; document.getElementById('modalNome').classList.add('hidden'); if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcador:marcadorModal, cor:corIcone, online:navigator.onLine}); }
 function handleDataAdmin(data, conn){
-  if(data.type==='entrar'){ let j=estadoSala.jogadores.find(x=>x.id===data.id); if(!j){ j={id:data.id, nome:data.nome, marcador:data.marcador||'✅', cor:data.cor||'#000', limite:null, status:'pendente', cartelas:[], online:data.online!=null?data.online:true}; estadoSala.jogadores.push(j); } else { j.online=data.online; } broadcastEstado(); }
+  if(data.type==='entrar'){ let j=estadoSala.jogadores.find(x=>x.id===data.id); if(!j){ j={id:data.id, nome:data.nome, marcador:data.marcador||'✅', cor:data.cor||'#000', limite:null, status:'pendente', cartelas:[], marcados:[], online:data.online!=null?data.online:true}; estadoSala.jogadores.push(j); } else { j.online=data.online; } broadcastEstado(); }
   if(data.type==='reservar'){ toggleCartelaServer(data.cartId, data.jogId); }
   if(data.type==='pronto'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.status='pronto'; j.marcador=data.marcador||j.marcador; j.cor=data.cor||j.cor; } broadcastEstado(); }
   if(data.type==='status'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.online=data.online; broadcastEstado(); } }
+  if(data.type==='marcar'){ const j=estadoSala.jogadores.find(x=>x.id===data.jogId); if(j){ j.marcados=data.marcados; broadcastEstado(); } }
 }
 function toggleCartelaServer(cartId, jogId){ const cart=estadoSala.cartelas.find(c=>c.id===cartId); const jog=estadoSala.jogadores.find(j=>j.id===jogId); if(!cart||!jog) return; if(cart.donoId && cart.donoId!==jogId) return; if(cart.donoId===jogId){ cart.donoId=null; cart.donoNome=null; jog.cartelas=jog.cartelas.filter(id=>id!==cartId); } else { if(jog.cartelas.length>=getLimite(jog)) return; cart.donoId=jogId; cart.donoNome=jog.nome; jog.cartelas.push(cartId); } jog.status='pendente'; broadcastEstado(); }
 function broadcastEstado(){ localStorage.setItem('bingo_estado_'+codigoSala, JSON.stringify(estadoSala)); Object.values(conexoes).forEach(c=>{ try{ c.send({type:'estado', estado:estadoSala}); }catch(e){} }); render(); }
@@ -213,6 +212,16 @@ function handleDataJogador(data){
 }
 function mostrarToastExtra(qtd){ const toast=document.getElementById('toastExtra'); toast.innerText=`🎉 Você ganhou ${qtd} cartela(s) extra! Escolha agora`; toast.classList.remove('hidden'); setTimeout(()=>toast.classList.add('hidden'), 4000); }
 function toggleCartela(id){ if(souAdmin){ toggleCartelaServer(id, meuId); } else { if(connAdmin) connAdmin.send({type:'reservar', cartId:id, jogId:meuId}); } }
+function toggleNumeroManual(num){
+  if(!num || num===0) return;
+  const eu=estadoSala.jogadores.find(j=>j.id===meuId);
+  if(!eu || eu.status!=='pronto') return;
+  eu.marcados=eu.marcados||[];
+  if(eu.marcados.includes(num)){ eu.marcados=eu.marcados.filter(n=>n!==num); }
+  else { eu.marcados.push(num); }
+  if(connAdmin) connAdmin.send({type:'marcar', jogId:meuId, marcados:eu.marcados});
+  render();
+}
 function ficarPronto(){ if(connAdmin) connAdmin.send({type:'pronto', jogId:meuId, marcador:marcadorModal, cor:corIcone}); }
 function addLimite(jogId, delta){ const j=estadoSala.jogadores.find(x=>x.id===jogId); const atual=j.limite!=null? j.limite : estadoSala.limitePadrao; let n=atual+delta; if(n<1) n=1; if(n>10) n=10; j.limite=n; broadcastEstado(); }
 function iniciarPartida(){ estadoSala.status='jogando'; broadcastEstado(); alert('Partida iniciada!'); }
@@ -243,7 +252,7 @@ function render(){
       const painel=document.getElementById('painelConvidado');
       painel.classList.remove('hidden');
       const multi=(jogadorAtual.cartelas.length>1);
-      painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length} ${multi?'<span class=text-[10px]>(deslize pro lado)</span>':''}</h3><div id="minhasCartelasGrande" class="${multi?'carousel':'space-y-4'}"></div><p class="text-center font-black text-green-600 mt-4">✅ VISTO - PRONTO</p>`;
+      painel.innerHTML=`<h3 class="font-black mb-2">MINHAS CARTELAS - ${jogadorAtual.cartelas.length} ${multi?'<span class=text-[10px]>(deslize pro lado)</span>':''} <span class="text-[10px] opacity-60 block">Toque no número para marcar</span></h3><div id="minhasCartelasGrande" class="${multi?'carousel':'space-y-4'}"></div><p class="text-center font-black text-green-600 mt-4">✅ VISTO - PRONTO</p>`;
       const grande=document.getElementById('minhasCartelasGrande');
       if(grande){
         grande.innerHTML='';
@@ -251,7 +260,18 @@ function render(){
           const c=estadoSala.cartelas.find(x=>x.id===id); if(!c) return;
           let html=`<div class="${multi?'carousel-item bg-zinc-50':'bg-zinc-50'} border-2 border-black rounded-xl p-3"><div class="flex justify-between text-xs font-black mb-2"><span>Cartela ${c.numero}</span><span style="color:${eu.cor||'#000'}">${eu.marcador}</span></div><div class="grid grid-cols-5 gap-[1px]">`;
           for(let l of ['B','I','N','G','O']) html+=`<div class="bg-black text-white cell-square text-[10px] font-black">${l}</div>`;
-          c.grid.forEach(row=>{ row.forEach(v=>{ const isFree=v==='BINGO FELIZ'; const marcado=estadoSala.numerosSorteados.includes(v); html+=`<div class="border bg-white cell-square text-xs font-bold relative ${isFree?'bg-black text-white text-[7px] leading-[9px]':''} ${marcado&&!isFree?'bg-yellow-200':''}">${isFree?'BINGO<br>FELIZ':v}${marcado&&!isFree?`<div class="absolute inset-0 flex items-center justify-center text-xl" style="color:${eu.cor||'#000'}">${eu.marcador}</div>`:''}</div>`; }); });
+          c.grid.forEach(row=>{
+            row.forEach(v=>{
+              const isFree=v==='BINGO FELIZ';
+              const marcadosJogador=eu.marcados||[];
+              const estaMarcado=marcadosJogador.includes(v);
+              if(isFree){
+                html+=`<div class="border bg-black text-white cell-square flex-col leading-none text-[7px] font-black cursor-default"><span>BINGO</span><span>FELIZ</span></div>`;
+              } else {
+                html+=`<div onclick="toggleNumeroManual(${v})" class="border bg-white cell-square text-xs font-bold relative cursor-pointer select-none ${estaMarcado?'bg-yellow-200':''}">${v}${estaMarcado?`<div class="absolute inset-0 flex items-center justify-center text-xl pointer-events-none" style="color:${eu.cor||'#000'}">${eu.marcador}</div>`:''}</div>`;
+              }
+            });
+          });
           html+=`</div></div>`; grande.innerHTML+=html;
         });
       }
@@ -267,7 +287,13 @@ function render(){
         div.className=`rounded-xl p-2 border-2 cursor-pointer ${minha?'bg-green-100 border-green-600':'bg-zinc-50 border-zinc-200'} ${ocupada?'opacity-40 pointer-events-none':''}`;
         let html=`<div class='flex justify-between text-[10px] font-black mb-1'><span>${cart.numero}</span><span>${cart.donoNome?cart.donoNome.substring(0,8):'LIVRE'}</span></div><div class='grid grid-cols-5 gap-[1px] text-[9px] font-bold'>`;
         for(let l of ['B','I','N','G','O']) html+=`<div class='bg-black text-white cell-square'>${l}</div>`;
-        cart.grid.forEach(row=>{ row.forEach(v=>{ const isFree=v==='BINGO FELIZ'; html+=`<div class='border bg-white cell-square ${isFree?'bg-black text-white text-[6px] leading-[7px]':''}'>${isFree?'BINGO<br>FELIZ':v}</div>`; }); });
+        cart.grid.forEach(row=>{
+          row.forEach(v=>{
+            const isFree=v==='BINGO FELIZ';
+            if(isFree){ html+=`<div class='border bg-black text-white cell-square flex-col leading-none text-[6px]'><span>BINGO</span><span>FELIZ</span></div>`; }
+            else { html+=`<div class='border bg-white cell-square'>${v}</div>`; }
+          });
+        });
         html+=`</div>`;
         div.innerHTML=html; div.onclick=()=>toggleCartela(cart.id); grid.appendChild(div);
       });
