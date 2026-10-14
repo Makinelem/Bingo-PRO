@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo Feliz V9.1 - Fix Conexão</title>
+<title>Bingo Feliz V9.3 - Reconexão</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -177,6 +177,7 @@ let marcadorSelecionado='check';
 let estadoSala={nome:'', total:20, limitePadrao:1, cartelas:[], jogadores:[], numerosSorteados:[], status:'lobby', cartelasPremiadas:[]};
 let intervaloGiro=null; let cartelaPremiadaTemp=null;
 let cartelaExtraPendente=null; let praMimBloqueado=false; let solicitacoesPendentes=[];
+let tentativasReconectar=0; let intervaloCheckConexao=null;
 const ICONES={
 check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l10-10"/></svg>`,
 x:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
@@ -278,9 +279,11 @@ if(params.get('sala')){
     const saved=localStorage.getItem('bingo_estado_'+codigoSala);
     if(saved){ estadoSala=JSON.parse(saved); if(!estadoSala.cartelasPremiadas) estadoSala.cartelasPremiadas=[]; souAdmin=true; meuId='admin-'+codigoSala; meuNome='Admin'; iniciarPeerAdmin(); }
   } else {
+    const sessao=localStorage.getItem('bingo_sessao_'+codigoSala);
+    const estadoSalvo=localStorage.getItem('bingo_estado_guest_'+codigoSala);
+    if(estadoSalvo){ try{ estadoSala=JSON.parse(estadoSalvo); }catch(e){} }
     iniciarPeerJogador();
     document.getElementById('btnCopiarLink').classList.add('hidden'); document.getElementById('painelAdmin').classList.add('hidden'); document.getElementById('painelSorteadosAdmin').classList.add('hidden'); document.getElementById('painelConvidado').classList.remove('hidden');
-    const sessao=localStorage.getItem('bingo_sessao_'+codigoSala);
     if(sessao){
       try{
         const s=JSON.parse(sessao);
@@ -341,25 +344,72 @@ function iniciarPeerJogador(){
   }
   document.getElementById('modalInfo').innerText='Bingo Feliz - Sala: '+codigoSala;
   document.getElementById('campoCodigoSala').classList.add('hidden');
+  if(peer){ try{ peer.destroy(); }catch(e){} }
   peer=new Peer();
   peer.on('open', myId=>{
     meuId=myId;
     if(dados){ localStorage.setItem('bingo_sessao_'+codigoSala, JSON.stringify({meuId:myId, nome:dados.nome||'', marcadorTipo:marcadorSelecionado, cor:corIcone, codigoSala})); }
     meuLimiteAnterior=estadoSala.limitePadrao;
-    connAdmin=peer.connect('bingo-'+codigoSala, {reliable:true});
-    connAdmin.on('open', ()=>{
-      atualizarStatusConexao();
-      connAdmin.on('data', data=>handleDataJogador(data));
-      if(dados && dados.nome){
-        meuNome=dados.nome; document.getElementById('meuNomeDisplay').innerText=meuNome;
-        document.getElementById('modalNome').classList.add('hidden');
-        connAdmin.send({type:'entrar', nome:meuNome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:true, reconexao:true});
-      }
-    });
-    connAdmin.on('error', ()=>{ setTimeout(()=>{ if(!connAdmin.open) iniciarPeerJogador(); }, 2000); });
+    conectarAoAdmin();
   });
-  peer.on('disconnected', ()=>{ peer.reconnect(); });
+  peer.on('disconnected', ()=>{ console.log('peer desconectado, reconectando...'); try{ peer.reconnect(); }catch(e){ setTimeout(tentarReconectar, 1500); } });
+  peer.on('close', ()=>{ setTimeout(tentarReconectar, 1500); });
+  peer.on('error', (err)=>{ console.log('peer error', err); setTimeout(tentarReconectar, 2000); });
 }
+function conectarAoAdmin(){
+  if(!codigoSala ||!peer) return;
+  atualizarStatusConexao('CONECTANDO...');
+  if(connAdmin){ try{ connAdmin.close(); }catch(e){} }
+  connAdmin=peer.connect('bingo-'+codigoSala, {reliable:true});
+  connAdmin.on('open', ()=>{
+    tentativasReconectar=0;
+    atualizarStatusConexao('CONECTADO');
+    if(intervaloCheckConexao) clearInterval(intervaloCheckConexao);
+    intervaloCheckConexao=setInterval(()=>{ if(connAdmin && connAdmin.open){ try{ connAdmin.send({type:'ping'}); }catch(e){} } else { tentarReconectar(); } }, 5000);
+    connAdmin.on('data', data=>handleDataJogador(data));
+    connAdmin.on('close', ()=>{ atualizarStatusConexao('RECONECTANDO...'); setTimeout(tentarReconectar, 1000); });
+    connAdmin.on('error', ()=>{ atualizarStatusConexao('RECONECTANDO...'); setTimeout(tentarReconectar, 1500); });
+    const sessao=localStorage.getItem('bingo_sessao_'+codigoSala);
+    if(sessao){
+      try{
+        const s=JSON.parse(sessao);
+        if(s.nome){
+          meuNome=s.nome; document.getElementById('meuNomeDisplay').innerText=meuNome;
+          document.getElementById('modalNome').classList.add('hidden');
+          connAdmin.send({type:'entrar', nome:meuNome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:true, reconexao:true});
+        }
+      }catch(e){}
+    }
+  });
+  connAdmin.on('error', ()=>{ setTimeout(tentarReconectar, 2000); });
+}
+function tentarReconectar(){
+  if(souAdmin) return;
+  if(document.visibilityState!=='visible'){ return; }
+  tentativasReconectar++;
+  atualizarStatusConexao('RECONECTANDO... ('+tentativasReconectar+')');
+  if(!peer || peer.destroyed){
+    iniciarPeerJogador();
+  } else {
+    conectarAoAdmin();
+  }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' &&!souAdmin && codigoSala){
+    console.log('voltou para tela, reconectando...');
+    setTimeout(()=>{ tentarReconectar(); }, 500);
+  }
+});
+window.addEventListener('focus', ()=>{
+  if(!souAdmin && codigoSala){
+    if(!connAdmin ||!connAdmin.open){ tentarReconectar(); }
+  }
+});
+window.addEventListener('online', ()=>{
+  atualizarStatusConexao();
+  if(!souAdmin && codigoSala){ setTimeout(tentarReconectar, 800); }
+  if(connAdmin) try{ connAdmin.send({type:'status', jogId:meuId, online:true}); }catch(e){}
+});
 function confirmarNome(){
   let codigoModal=null;
   const campoCodigo=document.getElementById('campoCodigoSala');
@@ -370,7 +420,7 @@ function confirmarNome(){
     document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala;
     document.getElementById('tela-home').classList.add('hidden');
     document.getElementById('tela-sala').classList.remove('hidden');
-    peer=new Peer(); peer.on('open', myId=>{ meuId=myId; connAdmin=peer.connect('bingo-'+codigoSala); connAdmin.on('open', ()=>{ atualizarStatusConexao(); connAdmin.on('data', data=>handleDataJogador(data)); enviarEntrada(); }); });
+    peer=new Peer(); peer.on('open', myId=>{ meuId=myId; conectarAoAdmin(); setTimeout(()=>enviarEntrada(), 500); });
     return;
   }
   enviarEntrada();
@@ -380,9 +430,11 @@ function enviarEntrada(){
   meuNome=nome; document.getElementById('meuNomeDisplay').innerText=nome;
   localStorage.setItem('bingo_sessao_'+codigoSala, JSON.stringify({meuId, nome:meuNome, marcadorTipo:marcadorSelecionado, cor:corIcone, codigoSala}));
   document.getElementById('modalNome').classList.add('hidden');
-  if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:navigator.onLine});
+  if(connAdmin && connAdmin.open) connAdmin.send({type:'entrar', nome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:navigator.onLine});
+  else { setTimeout(()=>{ if(connAdmin) connAdmin.send({type:'entrar', nome, id:meuId, marcadorTipo:marcadorSelecionado, cor:corIcone, online:true}); }, 1000); }
 }
 function handleDataAdmin(data, conn){
+  if(data.type==='ping'){ try{ conn.send({type:'pong'}); }catch(e){} return; }
   if(data.type==='entrar'){
     const nomeLower=data.nome.trim().toLowerCase();
     const existe=estadoSala.jogadores.find(x=>x.nome.trim().toLowerCase()===nomeLower && x.id!==data.id);
@@ -435,10 +487,12 @@ function broadcastEstado(){
   render();
 }
 function handleDataJogador(data){
+  if(data.type==='pong'){ return; }
   if(data.type==='estado'){
     const euAntes=estadoSala.jogadores? estadoSala.jogadores.find(j=>j.id===meuId) : null;
     const limiteAntes=euAntes? getLimite(euAntes) : meuLimiteAnterior;
     estadoSala=data.estado;
+    localStorage.setItem('bingo_estado_guest_'+codigoSala, JSON.stringify(estadoSala));
     if(!estadoSala.cartelasPremiadas) estadoSala.cartelasPremiadas=[];
     document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome;
     const euDepois=estadoSala.jogadores.find(j=>j.id===meuId);
@@ -450,6 +504,7 @@ function handleDataJogador(data){
       meuLimiteAnterior=limiteDepois;
       if(euDepois.praMimBloqueado){ praMimBloqueado=true; } else { praMimBloqueado=false; }
     }
+    atualizarStatusConexao('CONECTADO');
     render();
   }
   if(data.type==='erro_nome'){ alert(data.msg); document.getElementById('modalNome').classList.remove('hidden'); }
@@ -523,6 +578,7 @@ function toggleNumeroManual(num){
   eu.marcados=eu.marcados||[];
   if(eu.marcados.includes(num)){ eu.marcados=eu.marcados.filter(n=>n!==num); }
   else { eu.marcados.push(num); }
+  localStorage.setItem('bingo_marcados_'+codigoSala+'_'+meuId, JSON.stringify(eu.marcados));
   if(connAdmin) connAdmin.send({type:'marcar', jogId:meuId, marcados:eu.marcados});
   render();
 }
@@ -656,13 +712,14 @@ function premiarCartela(cartId){
   if(jogador){ const conn=conexoes[jogador.id]; if(conn){ try{ conn.send({type:'premio'}); }catch(e){} } }
   soltarConfete(); alert(`Cartela premiada e removida!`); fecharConferir();
 }
-function atualizarStatusConexao(){
+function atualizarStatusConexao(status){
   const el=document.getElementById('statusConexao'); if(!el) return;
-  if(navigator.onLine){ el.innerText='CONECTADO'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-green-400 text-black'; }
-  else { el.innerText='SEM INTERNET'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-400 text-black animate-pulse'; }
+  if(status){ el.innerText=status; }
+  if(!navigator.onLine){ el.innerText='SEM INTERNET'; el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-400 text-black animate-pulse'; return; }
+  if(el.innerText.includes('CONECTADO')){ el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-green-400 text-black'; }
+  else if(el.innerText.includes('RECONECTANDO')){ el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-400 text-black animate-pulse'; }
+  else { el.className='text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-200'; }
 }
-window.addEventListener('online', ()=>{ atualizarStatusConexao(); if(connAdmin) connAdmin.send({type:'status', jogId:meuId, online:true}); });
-window.addEventListener('offline', ()=>{ atualizarStatusConexao(); if(connAdmin) connAdmin.send({type:'status', jogId:meuId, online:false}); });
 function render(){
   if(!estadoSala.cartelas) return;
   const eu=souAdmin? null : estadoSala.jogadores.find(j=>j.id===meuId);
@@ -675,7 +732,6 @@ function render(){
   const btnCartelasHome=document.getElementById('btnCartelasHome');
   if(btnCartelasHome) btnCartelasHome.innerText=`CARTELAS (${livres})`;
   const colCartelas=document.getElementById('colCartelas');
-  const colContainer=document.getElementById('colCartelasContainer');
   const roleta=document.getElementById('adminRoleta');
   if(souAdmin && estadoSala.status==='jogando'){
     if(colCartelas) colCartelas.classList.add('hidden');
@@ -688,19 +744,21 @@ function render(){
     if(colCartelas) colCartelas.classList.remove('hidden');
   }
   const grid=document.getElementById('gridCartelas');
-  const podeEscolherExtra = eu && eu.status==='pronto' && jogadorAtual.cartelas.length < getLimite(eu);
   const painelGeral=document.getElementById('painelSorteioGeral');
   const painelUlt=document.getElementById('painelUltimoConvidado');
-  if(!souAdmin && estadoSala.status==='jogando'){
-    if(painelGeral) painelGeral.classList.add('hidden');
-    if(painelUlt) painelUlt.classList.add('hidden');
-  } else {
-    if(!souAdmin && eu && eu.status==='pronto' &&!modoEscolhaExtra &&!podeEscolherExtra){
+  const isJogando = estadoSala.status==='jogando';
+  if(!souAdmin){
+    if(isJogando){
+      if(painelGeral) painelGeral.classList.add('hidden');
+      if(painelUlt) painelUlt.classList.add('hidden');
     } else {
-      if(!souAdmin){ if(painelGeral) painelGeral.classList.remove('hidden'); }
-      else { if(painelGeral) painelGeral.classList.add('hidden'); }
+      if(painelGeral) painelGeral.classList.add('hidden');
+      if(painelUlt) painelUlt.classList.add('hidden');
     }
+  } else {
+    if(painelGeral) painelGeral.classList.add('hidden');
   }
+  const podeEscolherExtra = eu && eu.status==='pronto' && jogadorAtual.cartelas.length < getLimite(eu);
   if(grid){
     if(!souAdmin && eu && eu.status==='pronto' &&!modoEscolhaExtra &&!podeEscolherExtra){
       document.getElementById('colCartelasContainer').classList.add('hidden');
@@ -730,7 +788,6 @@ function render(){
           html+=`</div></div>`; grande.innerHTML+=html;
         });
       }
-      document.getElementById('painelUltimoConvidado').classList.add('hidden');
     } else if(!souAdmin && eu && podeEscolherExtra){
       document.getElementById('colCartelasContainer').classList.remove('hidden');
       document.getElementById('colCartelas').classList.remove('hidden');
