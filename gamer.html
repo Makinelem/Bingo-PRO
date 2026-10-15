@@ -781,6 +781,9 @@ function atualizarStatusConexao(status){
 }
 function render(){
   if(!estadoSala.cartelas) return;
+  // Preserve the player's horizontal position while the card markup is refreshed.
+  const carouselAntes=document.getElementById('minhasCartelasGrande');
+  const scrollCartelasAntes=carouselAntes ? carouselAntes.scrollLeft : 0;
   const eu=souAdmin? null : estadoSala.jogadores.find(j=>j.id===meuId);
   const jogadorAtual=eu||{cartelas:[], id:meuId};
   document.getElementById('totalDisponibilizadas').innerText=estadoSala.total;
@@ -923,6 +926,8 @@ function render(){
   const elUlt=document.getElementById('ultimoNumero'); if(elUlt) elUlt.innerText=ultimo;
   const elUltConv=document.getElementById('ultimoNumeroConvidado'); if(elUltConv) elUltConv.innerText=ultimo;
   const bolasEl=document.getElementById('bolasSorteadas'); if(bolasEl) bolasEl.innerHTML=estadoSala.numerosSorteados.map(n=>`<span class='bg-white text-black px-2.5 py-1 rounded-full text-xs font-black'>${n}</span>`).join('');
+  const carouselDepois=document.getElementById('minhasCartelasGrande');
+  if(carouselDepois && scrollCartelasAntes>0) carouselDepois.scrollLeft=scrollCartelasAntes;
 }
 </script>
 </body>

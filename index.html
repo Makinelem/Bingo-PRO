@@ -32,14 +32,14 @@
 <body class="bg-black text-white min-h-screen">
 
 <!-- OVERLAYS DE ALERTA E TELA CHEIA DE FIM DE JOGO -->
-<div id="overlayAlertaPiscar" class="fixed inset-0 z-[100] hidden flex items-center justify-center pointer-events-none">
-  <div class="bg-red-600 w-[70vw] h-[70vh] rounded-3xl shadow-2xl flex items-center justify-center alerta-piscar">
-    <span class="text-white text-5xl font-black uppercase tracking-wider">⚠️ ATENÇÃO!</span>
+<div id="overlayAlertaPiscar" class="fixed inset-0 z-[100] hidden flex items-center justify-center pointer-events-none bg-red-600 alerta-piscar">
+  <div class="w-full h-full flex items-center justify-center px-4">
+    <span class="text-white text-4xl sm:text-6xl md:text-7xl font-black tracking-wide whitespace-nowrap">⚠️ ATENÇÃO!</span>
   </div>
 </div>
-<div id="overlayPrepareSe" class="fixed inset-0 z-[101] bg-white text-black hidden flex-col items-center justify-center text-center p-6">
-  <h1 class="text-6xl font-black mb-4">PREPARE-SE</h1>
-  <p class="text-xl font-bold text-zinc-600">A rodada já vai começar!</p>
+<div id="overlayPrepareSe" class="fixed inset-0 z-[101] bg-white text-black hidden flex-col items-center justify-center text-center p-4">
+  <h1 class="text-4xl sm:text-6xl md:text-7xl font-black mb-4 whitespace-nowrap">Prepare-se!</h1>
+  <p class="text-lg sm:text-2xl font-bold text-zinc-600 whitespace-nowrap">A partida já vai começar</p>
 </div>
 <div id="overlayFimJogo" class="fixed inset-0 z-[90] bg-black text-white hidden flex-col items-center justify-center text-center p-8">
   <h1 class="text-4xl md:text-5xl font-black mb-6 leading-tight">Sua participação foi incrível!</h1>
@@ -83,13 +83,15 @@
 </div>
 </div>
 <div id="tela-sala" class="hidden">
-<div class="flex justify-between gap-3 mb-4">
-<div class="bg-white text-black rounded-2xl px-5 py-3 flex-1 flex justify-between items-center">
-<div><h2 id="nomeSalaDisplay" class="font-black"></h2><p id="codigoDisplay" class="text-[11px] font-mono"></p></div>
-<div class="text-right"><span id="statusConexao" class="text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-200">CONECTANDO...</span><p class="text-[11px] mt-1">Você: <b id="meuNomeDisplay"></b></p></div>
+<div class="mb-2">
+<div class="bg-white text-black rounded-2xl px-5 py-3 flex justify-between items-center gap-3">
+<div class="min-w-0"><h2 id="nomeSalaDisplay" class="font-black"></h2><p id="codigoDisplay" class="text-[11px] font-mono"></p></div>
+<div class="text-right shrink-0"><span id="statusConexao" class="text-[10px] px-2 py-1 rounded-full font-bold bg-yellow-200">CONECTANDO...</span><p class="text-[11px] mt-1">Você: <b id="meuNomeDisplay"></b></p></div>
 </div>
-<button id="btnCartelasAdmin" onclick="toggleModalCartelasAdmin()" class="hidden bg-white text-black rounded-2xl px-4 py-3 text-xs font-black">CARTELAS (0)</button>
-<button id="btnCopiarLink" onclick="copiarLinkSala()" class="bg-zinc-800 rounded-2xl px-4 py-3 text-xs font-bold">COPIAR LINK</button>
+<div class="flex gap-2 mt-2">
+<button id="btnCartelasAdmin" onclick="toggleModalCartelasAdmin()" class="hidden flex-1 bg-white text-black rounded-xl px-4 py-3 text-xs font-black">CARTELAS (0)</button>
+<button id="btnCopiarLink" onclick="copiarLinkSala()" class="flex-1 bg-zinc-800 rounded-xl px-4 py-3 text-xs font-bold">LINK</button>
+</div>
 </div>
 <div id="solicitacoesExtras" class="hidden bg-yellow-100 text-black rounded-2xl p-4 mb-4"></div>
 <div id="toastExtra" class="hidden fixed top-4 left-1/2 -translate-x-1/2 bg-[#25D366] text-black px-6 py-3 rounded-full font-black z-[60] shadow-xl"></div>
@@ -126,10 +128,7 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
     <span class="text-[10px] font-black opacity-60 uppercase block">Configuração da Sala</span>
     <h3 id="nomeSalaRoleta" class="font-black text-base"></h3>
   </div>
-  <div class="flex gap-2">
-    <button onclick="toggleModalCartelasAdmin()" class="bg-black text-white rounded-xl px-3 py-1.5 text-xs font-black">CARTELAS</button>
-    <button onclick="copiarLinkSala()" class="bg-zinc-800 text-white rounded-xl px-3 py-1.5 text-xs font-black">LINK</button>
-  </div>
+
 </div>
 <button onclick="abrirConferirBingo()" class="w-full bg-yellow-400 text-black rounded-xl py-3 font-black text-sm mb-4 shadow">🔍 CONFERIR BINGO</button>
 <h2 class="text-2xl font-black mb-4">🎱 GLOBO SORTEADOR</h2>
@@ -147,6 +146,12 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 </div>
 </div>
 <div class="space-y-4">
+<div id="painelSorteadosAdmin" class="hidden bg-white text-black rounded-[20px] p-4">
+<h3 class="font-black mb-2">🎱 SORTEADOS</h3>
+<div id="ultimoNumeroAdmin" class="text-7xl font-black text-center py-4 bg-black text-white rounded-xl mb-3">--</div>
+<p class="text-[11px] opacity-60 mb-2"><span id="totalSorteadosAdmin">0</span>/75</p>
+<div id="bolasSorteadasAdmin" class="flex flex-wrap gap-1.5"></div>
+</div>
 <div id="painelAdmin" class="hidden bg-white text-black rounded-[20px] p-4">
 <h3 class="font-black mb-1">ADMIN - JOGADORES</h3>
 <div id="listaJogadores" class="space-y-2 mb-3"></div>
@@ -155,12 +160,6 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 <button onclick="enviarAlertaConvidado()" class="w-full bg-red-600 text-white rounded-xl py-3 font-black text-sm">🚨 ALERTAR</button>
 <button onclick="iniciarPartida()" class="w-full bg-black text-white rounded-xl py-3 font-black text-sm">INICIAR</button>
 </div>
-</div>
-<div id="painelSorteadosAdmin" class="hidden bg-white text-black rounded-[20px] p-4">
-<h3 class="font-black mb-2">🎱 SORTEADOS</h3>
-<div id="ultimoNumeroAdmin" class="text-7xl font-black text-center py-4 bg-black text-white rounded-xl mb-3">--</div>
-<p class="text-[11px] opacity-60 mb-2"><span id="totalSorteadosAdmin">0</span>/75</p>
-<div id="bolasSorteadasAdmin" class="flex flex-wrap gap-1.5"></div>
 </div>
 <div id="painelConvidado" class="hidden bg-white text-black rounded-[20px] p-4">
 <h3 class="font-black mb-2">MINHAS CARTELAS</h3>
@@ -954,11 +953,18 @@ function render(){
     }
   }
   if(souAdmin){
-    const listaHtml=estadoSala.jogadores.map(j=>{
+    const linhasJogadores=[];
+    estadoSala.jogadores.forEach(j=>{
       const pronto=j.status==='pronto'; const offline=j.online===false;
       const corNome=offline? 'bg-yellow-400 text-black animate-pulse' : pronto? 'bg-green-100' : 'bg-red-100';
-      return `<div class='flex items-center justify-between p-2 rounded-xl border-2 ${pronto?'border-green-600':'border-red-400'} ${corNome}'><div class='flex items-center gap-2'><span>${offline?'🟡':pronto?'🟢':'🔴'}</span><span class='text-sm font-bold'>${j.nome} <span style="color:${j.cor||'#000'};display:inline-block;width:16px;height:16px;">${ICONES[j.marcadorTipo]||''}</span></span><span class='text-[10px]'>${j.cartelas.length}/${getLimite(j)}</span></div><div class='flex gap-1'><button onclick='addLimite("${j.id}",-1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>-1 EXTRA</button><button onclick='addLimite("${j.id}",1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>+1 EXTRA</button><button onclick='excluirJogador("${j.id}")' class='bg-red-100 border-2 border-red-600 px-2 py-1 rounded text-[10px] font-black'>🗑️</button></div></div>`;
-    }).join('');
+      linhasJogadores.push(`<div class='flex items-center justify-between gap-2 p-2 rounded-xl border-2 ${pronto?'border-green-600':'border-red-400'} ${corNome}'><div class='flex items-center gap-2 min-w-0'><span>${offline?'🟡':pronto?'🟢':'🔴'}</span><span class='text-sm font-bold break-words'>${j.nome} <span style="color:${j.cor||'#000'};display:inline-block;width:16px;height:16px;">${ICONES[j.marcadorTipo]||''}</span></span><span class='text-[10px] shrink-0'>${j.cartelas.length}/${getLimite(j)}</span></div><div class='flex gap-1 shrink-0'><button onclick='addLimite("${j.id}",-1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>-1 EXTRA</button><button onclick='addLimite("${j.id}",1)' class='bg-white border-2 border-black px-2 py-1 rounded text-[10px] font-black'>+1 EXTRA</button><button onclick='excluirJogador("${j.id}")' class='bg-red-100 border-2 border-red-600 px-2 py-1 rounded text-[10px] font-black'>🗑️</button></div></div>`);
+      (j.cartelas||[]).forEach(cid=>{
+        const cart=estadoSala.cartelas.find(c=>c.id===cid);
+        if(!cart || !cart.nomeCartela || cart.nomeCartela.trim().toLowerCase()===j.nome.trim().toLowerCase()) return;
+        linhasJogadores.push(`<div class='flex items-center justify-between gap-2 p-2 ml-3 rounded-xl border-2 border-blue-500 bg-blue-50 text-black'><div class='flex items-center gap-2 min-w-0'><span>🔵</span><span class='text-sm font-bold break-words'>${cart.nomeCartela} / ${j.nome}</span><span class='text-[10px] shrink-0'>Cartela ${cart.numero}</span></div><span class='text-[10px] font-black shrink-0'>CARTELA EXTRA</span></div>`);
+      });
+    });
+    const listaHtml=linhasJogadores.join('');
     document.getElementById('listaJogadores').innerHTML=listaHtml;
     const lm=document.getElementById('listaJogadoresMobile'); if(lm) lm.innerHTML=listaHtml;
     document.getElementById('ultimoNumeroAdmin').innerText=estadoSala.numerosSorteados.length? estadoSala.numerosSorteados[estadoSala.numerosSorteados.length-1] : '--';
