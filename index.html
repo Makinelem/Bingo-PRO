@@ -45,6 +45,20 @@
   <h1 class="text-4xl md:text-5xl font-black mb-6 leading-tight">Sua participação foi incrível!</h1>
   <p class="text-2xl md:text-3xl font-bold text-yellow-400">Agradecemos por jogar!!! 🎉</p>
 </div>
+<div id="overlayPausaBingo" class="fixed inset-0 z-[120] bg-black text-white hidden flex-col items-center justify-center text-center p-6">
+  <h1 class="text-4xl sm:text-6xl font-black mb-4">Possível BINGO</h1><p class="text-xl sm:text-3xl font-bold">Aguarde o resultado!</p>
+</div>
+<div id="overlayPosPremio" class="fixed inset-0 z-[130] bg-black text-white hidden flex-col items-center justify-center text-center p-6">
+  <h1 class="text-3xl sm:text-5xl font-black mb-8">Sua participação foi incrível</h1>
+  <button onclick="acompanharPartida()" class="w-full max-w-sm bg-white text-black rounded-xl py-4 font-black mb-3">ACOMPANHAR</button>
+  <button onclick="sairAposPremio()" class="w-full max-w-sm bg-zinc-800 text-white rounded-xl py-4 font-black">SAIR</button>
+</div>
+<div id="overlayAcompanhar" class="fixed inset-0 z-[131] bg-black text-white hidden flex-col p-5 overflow-auto">
+  <h2 class="text-2xl sm:text-4xl font-black text-center mb-4">Acompanhar a partida</h2><p class="text-sm text-zinc-300 text-center mb-4">Lista de jogadores e situação do bingo</p><div id="listaAcompanhar" class="w-full max-w-xl mx-auto space-y-2"></div>
+</div>
+<div id="overlaySaiu" class="fixed inset-0 z-[140] bg-black text-white hidden flex-col items-center justify-center text-center p-6">
+  <button id="btnAtualizarDepoisDeSair" onclick="location.reload()" class="hidden bg-white text-black rounded-xl px-8 py-4 text-xl font-black">ATUALIZAR</button>
+</div>
 
 <div class="max-w-6xl mx-auto p-4">
 <div id="tela-home" class="min-h-[90vh] flex items-center justify-center">
@@ -138,7 +152,7 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 <button id="btnParar" onclick="pararGiro()" class="hidden flex-1 bg-red-600 text-white py-3 rounded-xl font-black text-sm">🛑 PARAR</button>
 <button onclick="sortearNumero()" class="flex-1 bg-zinc-200 text-black py-3 rounded-xl font-black text-sm">🎲 SORTEAR</button>
 </div>
-<button onclick="confirmarNovaPartida()" class="w-full bg-zinc-100 text-black border-2 border-zinc-300 rounded-xl py-3 font-black text-sm mb-4">🔄 NOVA</button>
+<button onclick="abrirModalNova()" class="w-full bg-zinc-100 text-black border-2 border-zinc-300 rounded-xl py-3 font-black text-sm mb-4">🔄 NOVA</button>
 <div id="painelSorteadosAdminDentro" class="mt-4 text-left">
 <h3 class="font-black mb-2">🎱 SORTEADOS (<span id="totalSorteadosAdminDentro">0</span>/75)</h3>
 <div id="bolasSorteadasAdminDentro" class="flex flex-wrap gap-1.5"></div>
@@ -190,6 +204,9 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 <div id="modalConferir" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4">
 <div class="bg-white text-black rounded-[20px] p-6 w-full max-w-lg">
 <h2 class="text-2xl font-black mb-1">🔍 Conferir Bingo</h2>
+<label for="inputCartelaConferir" class="block text-xs font-black mt-3 mb-1">NÚMERO DA CARTELA EM CONFERÊNCIA</label>
+<input id="inputCartelaConferir" type="number" min="1" onchange="pausarCartelaInformada()" class="w-full bg-yellow-100 rounded-xl p-3 mb-3 font-bold border-2 border-black" placeholder="Ex: 07">
+<label for="inputConferir" class="block text-xs font-black mb-1">NÚMEROS DA CARTELA</label>
 <textarea id="inputConferir" class="w-full bg-zinc-100 rounded-xl p-4 font-mono text-sm h-28 border-2 border-black" placeholder="Ex: 5 12 33 48 70"></textarea>
 <div id="resultadoConferir" class="mt-4 p-3 rounded-xl hidden"></div>
 <div id="areaPremiar" class="hidden mt-3"></div>
@@ -199,6 +216,8 @@ Preview: <span id="marcadorModalDisplay" class="inline-block w-8 h-8 align-middl
 </div>
 </div>
 </div>
+<div id="modalNova" class="fixed inset-0 z-[150] bg-black/90 hidden items-center justify-center p-4"><div class="bg-white text-black rounded-2xl p-6 w-full max-w-md"><h2 class="text-2xl font-black mb-4">O que deseja fazer?</h2><button onclick="selecionarAcaoNova('sala')" class="w-full bg-black text-white rounded-xl p-4 font-black mb-3">Abrir nova sala</button><p class="text-xs text-zinc-500 mb-4">Encerra esta sala e encaminha os jogadores à página inicial.</p><button onclick="selecionarAcaoNova('rodada')" class="w-full bg-zinc-200 text-black rounded-xl p-4 font-black mb-4">Iniciar nova rodada</button><div id="areaSenhaNova" class="hidden"><label class="text-xs font-black block mb-1">SENHA DE CONFIRMAÇÃO</label><input id="senhaAcaoProtegida" type="password" inputmode="numeric" autocomplete="current-password" class="w-full border-2 border-black bg-zinc-100 rounded-xl p-3 mb-3" placeholder="Digite a senha"><button onclick="confirmarAcaoNova()" class="w-full bg-green-600 text-white rounded-xl p-3 font-black">CONFIRMAR</button></div><button onclick="fecharModalNova()" class="w-full mt-3 text-zinc-500 font-bold">Cancelar</button></div></div>
+<div id="modalSenhaExcluir" class="fixed inset-0 z-[151] bg-black/90 hidden items-center justify-center p-4"><div class="bg-white text-black rounded-2xl p-6 w-full max-w-sm"><h2 class="text-xl font-black mb-3">Confirmar exclusão</h2><p class="text-sm mb-3">Digite a senha de administrador para excluir este jogador.</p><input id="senhaExcluirInput" type="password" inputmode="numeric" class="w-full border-2 border-black bg-zinc-100 rounded-xl p-3 mb-3" placeholder="Senha"><div class="flex gap-2"><button onclick="confirmarExclusaoJogador()" class="flex-1 bg-red-600 text-white rounded-xl p-3 font-black">Excluir</button><button onclick="fecharModalSenhaExcluir()" class="flex-1 bg-zinc-200 rounded-xl p-3 font-black">Cancelar</button></div></div></div>
 <script>
 let peer=null, connAdmin=null, conexoes={}, souAdmin=false, codigoSala=null, meuId=null, meuNome=null, corIcone='#000000', meuLimiteAnterior=1;
 let modoEscolhaExtra=false;
@@ -207,6 +226,7 @@ let estadoSala={nome:'', total:20, limitePadrao:1, cartelas:[], jogadores:[], nu
 let intervaloGiro=null; let cartelaPremiadaTemp=null;
 let cartelaExtraPendente=null; let praMimBloqueado=false; let solicitacoesPendentes=[];
 let tentativasReconectar=0; let intervaloCheckConexao=null;
+let acaoNovaSelecionada=null, jogadorParaExcluir=null, pausaConferenciaAtiva=false, jogadorPossivelBingo=null, infoPossivelBingo=null, infoBingoConfirmado=null, saiuAposPremio=false, aguardandoPosPremio=false, modoAcompanhar=false;
 const ICONES={
 check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l10-10"/></svg>`,
 x:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
@@ -527,8 +547,12 @@ function broadcastEstado(){
 function handleDataJogador(data){
   if(data.type==='pong'){ return; }
   if(data.type==='alerta'){ executarEfeitoAlerta(); return; }
-  if(data.type==='fim_jogo'){ document.getElementById('overlayFimJogo').classList.remove('hidden'); document.getElementById('overlayFimJogo').classList.add('flex'); return; }
-  if(data.type==='nova_partida'){ document.getElementById('overlayFimJogo').classList.add('hidden'); document.getElementById('overlayFimJogo').classList.remove('flex'); }
+  if(data.type==='pausa_bingo'){ if(data.excetoId!==meuId && !saiuAposPremio){ document.getElementById('overlayPausaBingo').classList.remove('hidden'); document.getElementById('overlayPausaBingo').classList.add('flex'); } else if(data.excetoId===meuId){ document.getElementById('overlayPausaBingo').classList.add('hidden'); document.getElementById('overlayPausaBingo').classList.remove('flex'); } infoPossivelBingo={cartela:data.cartela, jogadorId:data.excetoId, nome:''}; atualizarListaAcompanhar(); return; }
+  if(data.type==='retomar_bingo'){ document.getElementById('overlayPausaBingo').classList.add('hidden'); document.getElementById('overlayPausaBingo').classList.remove('flex'); return; }
+  if(data.type==='bingo_confirmado'){ infoBingoConfirmado=data.info; atualizarListaAcompanhar(); return; }
+  if(data.type==='abrir_nova_sala'){ if(saiuAposPremio){ mostrarBotaoAtualizarAposSair(); } else { alert('Atualize a página para entrar na nova sala.'); location.href=location.origin+location.pathname.replace(/[^/]*$/,'gamer.html'); } return; }
+  if(data.type==='fim_jogo'){ if(saiuAposPremio){ mostrarBotaoAtualizarAposSair(); } else if(!aguardandoPosPremio){ document.getElementById('overlayFimJogo').classList.remove('hidden'); document.getElementById('overlayFimJogo').classList.add('flex'); } return; }
+  if(data.type==='nova_partida'){ document.getElementById('overlayFimJogo').classList.add('hidden'); document.getElementById('overlayFimJogo').classList.remove('flex'); if(saiuAposPremio) mostrarBotaoAtualizarAposSair(); }
   if(data.type==='estado'){
     const euAntes=estadoSala.jogadores? estadoSala.jogadores.find(j=>j.id===meuId) : null;
     const limiteAntes=euAntes? getLimite(euAntes) : meuLimiteAnterior;
@@ -545,13 +569,9 @@ function handleDataJogador(data){
       meuLimiteAnterior=limiteDepois;
       if(euDepois.praMimBloqueado){ praMimBloqueado=true; } else { praMimBloqueado=false; }
     }
-    if(estadoSala.status==='encerrado'){
-      document.getElementById('overlayFimJogo').classList.remove('hidden');
-      document.getElementById('overlayFimJogo').classList.add('flex');
-    } else {
-      document.getElementById('overlayFimJogo').classList.add('hidden');
-      document.getElementById('overlayFimJogo').classList.remove('flex');
-    }
+    if(estadoSala.status==='encerrado' && !saiuAposPremio && !aguardandoPosPremio){ document.getElementById('overlayFimJogo').classList.remove('hidden'); document.getElementById('overlayFimJogo').classList.add('flex'); }
+    else if(estadoSala.status!=='encerrado'){ document.getElementById('overlayFimJogo').classList.add('hidden'); document.getElementById('overlayFimJogo').classList.remove('flex'); }
+    atualizarListaAcompanhar();
     atualizarStatusConexao('CONECTADO');
     render();
   }
@@ -704,28 +724,42 @@ function renderSolicitacoes(){
   div.innerHTML=solicitacoesPendentes.map(s=>`<div class="flex justify-between items-center bg-white p-3 rounded-xl mb-2"><span class="font-black text-sm">${s.nome} quer manter mais de uma!</span><div class="flex gap-2"><button onclick="aprovarPraMim('${s.jogId}', ${s.cartId||'null'})" class="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-black">Aprovar</button><button onclick="negarPraMim('${s.jogId}')" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black">Negar</button></div></div>`).join('');
 }
 function excluirJogador(jogId){
-  const senha=prompt('Digite a senha 0000 para excluir o jogador:');
-  if(senha!=='0000'){ alert('Senha incorreta!'); return; }
+  jogadorParaExcluir=jogId;
+  document.getElementById('senhaExcluirInput').value='';
+  document.getElementById('modalSenhaExcluir').classList.remove('hidden');
+  document.getElementById('modalSenhaExcluir').classList.add('flex');
+}
+function fecharModalSenhaExcluir(){ document.getElementById('modalSenhaExcluir').classList.add('hidden'); document.getElementById('modalSenhaExcluir').classList.remove('flex'); jogadorParaExcluir=null; }
+function confirmarExclusaoJogador(){
+  const senha=document.getElementById('senhaExcluirInput').value;
+  if(senha!=='0000'){ alert('Senha incorreta.'); return; }
+  const jogId=jogadorParaExcluir; fecharModalSenhaExcluir();
   const idx=estadoSala.jogadores.findIndex(x=>x.id===jogId);
-  if(idx>=0){
-    const jog=estadoSala.jogadores[idx];
-    jog.cartelas.forEach(cid=>{ const c=estadoSala.cartelas.find(x=>x.id===cid); if(c){ c.donoId=null; c.donoNome=null; c.nomeCartela=null; } });
-    estadoSala.jogadores.splice(idx,1);
-    broadcastEstado();
-  }
+  if(idx>=0){ const jog=estadoSala.jogadores[idx]; jog.cartelas.forEach(cid=>{ const c=estadoSala.cartelas.find(x=>x.id===cid); if(c){ c.donoId=null; c.donoNome=null; c.nomeCartela=null; } }); estadoSala.jogadores.splice(idx,1); broadcastEstado(); }
 }
+
 function iniciarPartida(){ estadoSala.status='jogando'; broadcastEstado(); alert('Partida iniciada! Cartelas foram para o botão Cartelas.'); }
-function confirmarNovaPartida(){
-  if(confirm("Deseja iniciar um NOVO JOGO na mesma sala? Os números sorteados serão zerados.")){
-    estadoSala.numerosSorteados=[];
-    estadoSala.cartelasPremiadas=[];
-    estadoSala.status='jogando';
-    Object.values(conexoes).forEach(c=>{
-      try{ if(c.open) c.send({type:'nova_partida'}); }catch(e){}
-    });
-    broadcastEstado();
+function abrirModalNova(){ document.getElementById('modalNova').classList.remove('hidden'); document.getElementById('modalNova').classList.add('flex'); document.getElementById('areaSenhaNova').classList.add('hidden'); document.getElementById('senhaAcaoProtegida').value=''; acaoNovaSelecionada=null; }
+function fecharModalNova(){ document.getElementById('modalNova').classList.add('hidden'); document.getElementById('modalNova').classList.remove('flex'); }
+function selecionarAcaoNova(acao){ acaoNovaSelecionada=acao; document.getElementById('areaSenhaNova').classList.remove('hidden'); document.getElementById('senhaAcaoProtegida').value=''; document.getElementById('senhaAcaoProtegida').focus(); }
+function confirmarAcaoNova(){
+  if(document.getElementById('senhaAcaoProtegida').value!=='0000'){ alert('Senha incorreta.'); return; }
+  const acao=acaoNovaSelecionada; fecharModalNova();
+  if(acao==='rodada'){ iniciarNovaRodadaAutorizada(); return; }
+  if(acao==='sala'){
+    Object.values(conexoes).forEach(c=>{ try{ if(c.open) c.send({type:'abrir_nova_sala'}); }catch(e){} });
+    try{ if(peer) peer.destroy(); }catch(e){}
+    localStorage.removeItem('bingo_admin_sessao');
+    setTimeout(()=>location.href=location.pathname.replace(/[^/]*$/,'index.html'),350);
   }
 }
+function iniciarNovaRodadaAutorizada(){
+  estadoSala.numerosSorteados=[]; estadoSala.cartelasPremiadas=[]; estadoSala.status='jogando';
+  estadoSala.jogadores.forEach(j=>{ j.marcados=[]; j.premiado=false; });
+  Object.values(conexoes).forEach(c=>{ try{ if(c.open) c.send({type:'nova_partida'}); }catch(e){} });
+  broadcastEstado();
+}
+function confirmarNovaPartida(){ abrirModalNova(); }
 function finalizarPartidaTotal(){
   estadoSala.status='encerrado';
   broadcastEstado();
@@ -755,15 +789,27 @@ function pararGiro(){
 function sortearNumero(){ const todos=[...Array(75).keys()].map(n=>n+1); const disp=todos.filter(n=>!estadoSala.numerosSorteados.includes(n)); if(!disp.length){ alert('Acabou'); return; } const num=disp[Math.floor(Math.random()*disp.length)]; estadoSala.numerosSorteados.push(num); const bola=document.getElementById('bolaGirando'); if(bola) bola.innerText=num; broadcastEstado(); }
 function copiarLinkSala(){ const link=location.origin+location.pathname.replace(/[^/]*$/,'gamer.html')+'?sala='+codigoSala; navigator.clipboard.writeText(link); alert('Link copiado'); }
 function soltarConfete(){ for(let i=0;i<80;i++){ const c=document.createElement('div'); c.className='confete'; c.style.left=Math.random()*100+'vw'; c.style.backgroundColor=`hsl(${Math.random()*360},100%,50%)`; document.body.appendChild(c); setTimeout(()=>c.remove(),4000); } }
-function mostrarPremio(){ document.getElementById('modalPremio').classList.remove('hidden'); document.getElementById('modalPremio').classList.add('flex'); soltarConfete(); }
-function fecharPremio(){ document.getElementById('modalPremio').classList.add('hidden'); document.getElementById('modalPremio').classList.remove('flex'); }
+function mostrarPremio(){ aguardandoPosPremio=true; document.getElementById('modalPremio').classList.remove('hidden'); document.getElementById('modalPremio').classList.add('flex'); soltarConfete(); }
+function fecharPremio(){ document.getElementById('modalPremio').classList.add('hidden'); document.getElementById('modalPremio').classList.remove('flex'); if(aguardandoPosPremio){ aguardandoPosPremio=false; document.getElementById('overlayPosPremio').classList.remove('hidden'); document.getElementById('overlayPosPremio').classList.add('flex'); } }
+function acompanharPartida(){ modoAcompanhar=true; document.getElementById('overlayPosPremio').classList.add('hidden'); document.getElementById('overlayPosPremio').classList.remove('flex'); document.getElementById('overlayAcompanhar').classList.remove('hidden'); document.getElementById('overlayAcompanhar').classList.add('flex'); atualizarListaAcompanhar(); }
+function sairAposPremio(){ saiuAposPremio=true; modoAcompanhar=false; document.getElementById('overlayPosPremio').classList.add('hidden'); document.getElementById('overlayPosPremio').classList.remove('flex'); document.getElementById('overlayAcompanhar').classList.add('hidden'); document.getElementById('overlayAcompanhar').classList.remove('flex'); document.getElementById('overlaySaiu').classList.remove('hidden'); document.getElementById('overlaySaiu').classList.add('flex'); document.getElementById('btnAtualizarDepoisDeSair').classList.add('hidden'); }
+function mostrarBotaoAtualizarAposSair(){ if(!saiuAposPremio)return; document.getElementById('overlaySaiu').classList.remove('hidden'); document.getElementById('overlaySaiu').classList.add('flex'); document.getElementById('btnAtualizarDepoisDeSair').classList.remove('hidden'); }
+function atualizarListaAcompanhar(){ const el=document.getElementById('listaAcompanhar'); if(!el)return; const players=estadoSala.jogadores||[]; el.innerHTML=players.map(j=>{let tags=[]; if(infoPossivelBingo && infoPossivelBingo.jogadorId===j.id)tags.push('POSSÍVEL BINGO'); if(infoBingoConfirmado && infoBingoConfirmado.jogadorId===j.id)tags.push('BINGO CONFIRMADO'); return `<div class="bg-zinc-900 border border-zinc-700 rounded-xl p-3"><div class="font-black">${j.nome}</div><div class="text-xs text-zinc-300 mt-1">${tags.length?tags.join(' · '):'Na partida'}</div></div>`;}).join('')||'<p class="text-center text-zinc-400">Nenhum jogador listado.</p>'; }
 function toggleModalCartelasAdmin(){ const m=document.getElementById('modalCartelasAdmin'); if(m.classList.contains('hidden')){ m.classList.remove('hidden'); m.classList.add('flex'); renderCartelasAdminModal(); } else { m.classList.add('hidden'); m.classList.remove('flex'); } }
 function renderCartelasAdminModal(){ const grid=document.getElementById('gridCartelasAdminModal'); grid.innerHTML=''; estadoSala.cartelas.filter(c=>!c.donoId &&!estadoSala.cartelasPremiadas.includes(c.id)).forEach(cart=>{ const div=document.createElement('div'); div.className='bg-zinc-50 border-2 rounded-xl p-2'; let html=`<div class='text-[10px] font-black mb-1'>${cart.numero} LIVRE</div><div class='grid grid-cols-5 gap-[1px] text-[8px] font-bold'>`; for(let l of ['B','I','N','G','O']) html+=`<div class='bg-black text-white cell-square'>${l}</div>`; cart.grid.forEach(row=>{ row.forEach(v=>{ if(v==='BINGO FELIZ') html+=`<div class='border bg-black text-white cell-square flex-col text-[5px]'><span>BINGO</span><span>FELIZ</span></div>`; else html+=`<div class='border bg-white cell-square'>${v}</div>`; }); }); html+=`</div>`; div.innerHTML=html; grid.appendChild(div); }); }
-function abrirConferirBingo(){ document.getElementById('modalConferir').classList.remove('hidden'); document.getElementById('modalConferir').classList.add('flex'); document.getElementById('resultadoConferir').classList.add('hidden'); document.getElementById('areaPremiar').classList.add('hidden'); }
-function fecharConferir(){ document.getElementById('modalConferir').classList.add('hidden'); document.getElementById('modalConferir').classList.remove('flex'); }
+function abrirConferirBingo(){ document.getElementById('modalConferir').classList.remove('hidden'); document.getElementById('modalConferir').classList.add('flex'); document.getElementById('resultadoConferir').classList.add('hidden'); document.getElementById('areaPremiar').classList.add('hidden'); document.getElementById('inputCartelaConferir').value=''; pausaConferenciaAtiva=false; }
+function enviarRetomarConferencia(){ Object.values(conexoes).forEach(c=>{try{if(c.open)c.send({type:'retomar_bingo'});}catch(e){}}); pausaConferenciaAtiva=false; jogadorPossivelBingo=null; }
+function iniciarPausaConferencia(cart){ jogadorPossivelBingo=cart && cart.donoId ? cart.donoId : null; infoPossivelBingo={cartela:cart?cart.numero:'?', jogadorId:jogadorPossivelBingo, nome:cart?(cart.nomeCartela||cart.donoNome||''):''}; Object.values(conexoes).forEach(c=>{try{if(c.open)c.send({type:'pausa_bingo', excetoId:jogadorPossivelBingo, cartela:cart?cart.numero:'?'});}catch(e){}}); pausaConferenciaAtiva=true; atualizarListaAcompanhar(); }
+function pausarCartelaInformada(){ const n=(document.getElementById('inputCartelaConferir').value||'').trim(); if(!n)return; const cart=estadoSala.cartelas.find(c=>String(c.numero)===n.padStart(2,'0') || String(c.id)===n); if(!cart){return;} iniciarPausaConferencia(cart); }
+function fecharConferir(){ document.getElementById('modalConferir').classList.add('hidden'); document.getElementById('modalConferir').classList.remove('flex'); if(pausaConferenciaAtiva) enviarRetomarConferencia(); }
 function fecharConferirContinuar(){ fecharConferir(); }
 function checarBingo(){
-  const txt=document.getElementById('inputConferir').value.trim(); if(!txt){ alert('Digite os números'); return; }
+  const numeroCartela=(document.getElementById('inputCartelaConferir').value||'').trim();
+  if(!numeroCartela){ alert('Informe o número da cartela em conferência.'); return; }
+  const cartelaSuspeita=estadoSala.cartelas.find(c=>String(c.numero)===numeroCartela.padStart(2,'0') || String(c.id)===numeroCartela);
+  if(!cartelaSuspeita){ alert('Não encontrei essa cartela. Confira o número.'); return; }
+  if(!pausaConferenciaAtiva){ iniciarPausaConferencia(cartelaSuspeita); }
+  const txt=document.getElementById('inputConferir').value.trim(); if(!txt){ alert('Digite os números da cartela'); return; }
   const nums=txt.split(/[\s,]+/).map(n=>parseInt(n)).filter(n=>!isNaN(n));
   const faltam=nums.filter(n=>!estadoSala.numerosSorteados.includes(n));
   const res=document.getElementById('resultadoConferir'); res.classList.remove('hidden');
@@ -775,13 +821,21 @@ function checarBingo(){
       res.className='mt-4 p-3 rounded-xl bg-yellow-100 border-2 border-yellow-600 text-yellow-800 font-black';
       res.innerHTML=`⚠️ Passou batido!<br>Todos sorteados, mas o último número chamado (${ultimoChamado}) não está entre os conferidos.`;
       area.classList.add('hidden');
+      if(pausaConferenciaAtiva) enviarRetomarConferencia();
       return;
     }
     let achada=null, jogador=null;
-    for(let cart of estadoSala.cartelas){
-      if(estadoSala.cartelasPremiadas.includes(cart.id)) continue;
+    const cart=cartelaSuspeita;
+    if(!estadoSala.cartelasPremiadas.includes(cart.id)){
       const todos=[]; cart.grid.forEach(r=>r.forEach(v=>{ if(v!=='BINGO FELIZ') todos.push(v); }));
-      if(nums.every(n=>todos.includes(n))){ achada=cart; if(cart.donoId) jogador=estadoSala.jogadores.find(j=>j.id===cart.donoId); break; }
+      if(nums.every(n=>todos.includes(n))){ achada=cart; if(cart.donoId) jogador=estadoSala.jogadores.find(j=>j.id===cart.donoId); }
+    }
+    if(!achada){
+      res.className='mt-4 p-3 rounded-xl bg-red-100 border-2 border-red-600 text-red-800 font-black';
+      res.innerHTML='❌ A cartela informada não confere com os números digitados.';
+      area.classList.add('hidden');
+      if(pausaConferenciaAtiva) enviarRetomarConferencia();
+      return;
     }
     cartelaPremiadaTemp=achada;
     const eCartaoCheio = (nums.length >= 24);
@@ -795,6 +849,7 @@ function checarBingo(){
     res.className='mt-4 p-3 rounded-xl bg-red-100 border-2 border-red-600 text-red-800 font-black';
     res.innerHTML=`❌ Não premiado<br>Faltam: <span class="bg-red-600 text-white px-2 py-1 rounded">${faltam.join(', ')}</span>`;
     area.classList.add('hidden');
+    if(pausaConferenciaAtiva) enviarRetomarConferencia();
   }
 }
 function premiarCartela(cartId, cartaoCheio){
@@ -807,8 +862,11 @@ function premiarCartela(cartId, cartaoCheio){
     jogador=estadoSala.jogadores.find(j=>j.id===cart.donoId);
     if(jogador){ jogador.cartelas=jogador.cartelas.filter(id=>id!==cartId); cart.donoId=null; cart.donoNome=null; cart.nomeCartela=null; }
   }
+  infoBingoConfirmado={jogadorId:jogador?jogador.id:null, nome:jogador?(cart && cart.nomeCartela ? cart.nomeCartela : jogador.nome):'Jogador', cartela:cart?cart.numero:'?'};
+  Object.values(conexoes).forEach(c=>{try{if(c.open)c.send({type:'bingo_confirmado', info:infoBingoConfirmado});}catch(e){}});
   broadcastEstado();
   if(jogador){ const conn=conexoes[jogador.id]; if(conn){ try{ conn.send({type:'premio'}); }catch(e){} } }
+  if(pausaConferenciaAtiva) enviarRetomarConferencia();
   soltarConfete();
   fecharConferir();
   if(cartaoCheio){
