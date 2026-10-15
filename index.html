@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo Feliz V9.3 - Reconexão</title>
+<title>Bingo Feliz — Administração</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -64,16 +64,6 @@
 </div>
 <button onclick="criarSala()" class="w-full bg-black text-white rounded-xl py-4 font-black">CRIAR SALA</button>
 
-<hr class="my-4">
-<div class="bg-zinc-100 rounded-xl p-4">
-<p class="text-[11px] font-black mb-2">JÁ TEM NÚMERO DA SALA? ENTRAR COMO CONVIDADO:</p>
-<div class="flex gap-2">
-<input id="inputEntrarSala" class="flex-1 bg-white rounded-xl p-3.5 font-bold uppercase border-2" placeholder="NÚMERO DA SALA" maxlength="10">
-<button onclick="entrarComoConvidadoPorCodigo()" class="bg-black text-white rounded-xl px-6 font-black">ENTRAR</button>
-
-
-</div>
-</div>
 </div>
 <div id="home-link" class="hidden">
 <div class="bg-zinc-100 rounded-xl p-4 mb-4">
@@ -274,17 +264,27 @@ function criarSala(){
   const senha=document.getElementById('inputSenha').value;
   if(senha!=='M@ki0110'){ alert('Senha incorreta!'); return; }
   const nome=document.getElementById('inputNomeSala').value||'Bingo Feliz';
-  const total=parseInt(document.getElementById('inputTotal').value)||20;
-  const limite=parseInt(document.getElementById('inputLimite').value)||1;
+  const total=parseInt(document.getElementById('inputTotal').value,10);
+  const limite=parseInt(document.getElementById('inputLimite').value,10);
+  if(!Number.isInteger(total) || total < 1 || total > 500){ alert('Informe um total de cartelas entre 1 e 500.'); return; }
+  if(!Number.isInteger(limite) || limite < 1 || limite > 10){ alert('Informe um limite por jogador entre 1 e 10.'); return; }
   let codigoCustom=document.getElementById('inputCodigoCustom').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
   const codigo=codigoCustom||Math.random().toString(36).substring(2,7).toUpperCase()+'-'+Math.random().toString(36).substring(2,4).toUpperCase();
   estadoSala={nome, total, limitePadrao:limite, cartelas:genCartelas(total), jogadores:[], numerosSorteados:[], status:'lobby', codigo, cartelasPremiadas:[]};
   localStorage.setItem('bingo_estado_'+codigo, JSON.stringify(estadoSala));
   localStorage.setItem('bingo_admin_sessao', JSON.stringify({codigo, tela:'home-link'}));
+  if(peer){ try{peer.destroy();}catch(e){} }
   peer=new Peer('bingo-'+codigo);
+  peer.on('error', err=>{
+    console.error('Erro ao criar sala:', err);
+    const mensagem = err && err.type==='unavailable-id'
+      ? 'Este número de sala já está em uso. Escolha outro número ou tente novamente mais tarde.'
+      : 'Não foi possível criar a sala. Verifique sua conexão com a internet e tente novamente.';
+    alert(mensagem);
+  });
   peer.on('open', id=>{
     codigoSala=codigo; souAdmin=true; meuId='admin-'+codigo; meuNome='Admin';
-    const link=location.origin+location.pathname+'?sala='+codigo;
+    const link=location.origin+location.pathname.replace(/[^/]*$/,'gamer.html')+'?sala='+codigo;
     document.getElementById('txtLink').innerText=link+'\nNÚMERO: '+codigo;
     document.getElementById('qrcodeHome').innerHTML=''; new QRCode(document.getElementById('qrcodeHome'), {text:link, width:120, height:120});
     document.getElementById('home-criar').classList.add('hidden');
@@ -309,7 +309,7 @@ function entrarComoAdmin(){
 function entrarComoConvidadoPorCodigo(){
   const codigo=document.getElementById('inputEntrarSala').value.trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
   if(!codigo){ alert('Digite o número da sala'); return; }
-  location.href=location.origin+location.pathname+'?sala='+codigo;
+  location.href=location.origin+location.pathname.replace(/[^/]*$/,'gamer.html')+'?sala='+codigo;
 }
 const params=new URLSearchParams(location.search);
 if(params.get('sala')){
@@ -350,7 +350,7 @@ if(params.get('sala')){
             document.getElementById('tela-home').classList.add('hidden'); document.getElementById('tela-sala').classList.remove('hidden'); souAdmin=true; meuId='admin-'+codigoSala; iniciarPeerAdmin();
             document.getElementById('codigoDisplay').innerText='Sala: '+codigoSala; document.getElementById('nomeSalaDisplay').innerText=estadoSala.nome;
           } else if(s.tela==='home-link'){
-            peer=new Peer('bingo-'+s.codigo); peer.on('open', ()=>{ codigoSala=s.codigo; souAdmin=true; meuId='admin-'+codigoSala; const link=location.origin+location.pathname+'?sala='+codigoSala; document.getElementById('txtLink').innerText=link+'\nNÚMERO: '+codigoSala; document.getElementById('qrcodeHome').innerHTML=''; new QRCode(document.getElementById('qrcodeHome'), {text:link, width:120, height:120}); document.getElementById('home-criar').classList.add('hidden'); document.getElementById('home-link').classList.remove('hidden'); window._linkSala=link; peer.on('connection', conn=>{ conn.on('open', ()=>{ conexoes[conn.peer]=conn; conn.on('data', data=>handleDataAdmin(data, conn)); conn.send({type:'estado', estado:estadoSala}); }); }); });
+            peer=new Peer('bingo-'+s.codigo); peer.on('open', ()=>{ codigoSala=s.codigo; souAdmin=true; meuId='admin-'+codigoSala; const link=location.origin+location.pathname.replace(/[^/]*$/,'gamer.html')+'?sala='+codigoSala; document.getElementById('txtLink').innerText=link+'\nNÚMERO: '+codigoSala; document.getElementById('qrcodeHome').innerHTML=''; new QRCode(document.getElementById('qrcodeHome'), {text:link, width:120, height:120}); document.getElementById('home-criar').classList.add('hidden'); document.getElementById('home-link').classList.remove('hidden'); window._linkSala=link; peer.on('connection', conn=>{ conn.on('open', ()=>{ conexoes[conn.peer]=conn; conn.on('data', data=>handleDataAdmin(data, conn)); conn.send({type:'estado', estado:estadoSala}); }); }); });
           }
         }
       }
@@ -754,7 +754,7 @@ function pararGiro(){
   sortearNumero();
 }
 function sortearNumero(){ const todos=[...Array(75).keys()].map(n=>n+1); const disp=todos.filter(n=>!estadoSala.numerosSorteados.includes(n)); if(!disp.length){ alert('Acabou'); return; } const num=disp[Math.floor(Math.random()*disp.length)]; estadoSala.numerosSorteados.push(num); const bola=document.getElementById('bolaGirando'); if(bola) bola.innerText=num; broadcastEstado(); }
-function copiarLinkSala(){ const link=location.origin+location.pathname+'?sala='+codigoSala; navigator.clipboard.writeText(link); alert('Link copiado'); }
+function copiarLinkSala(){ const link=location.origin+location.pathname.replace(/[^/]*$/,'gamer.html')+'?sala='+codigoSala; navigator.clipboard.writeText(link); alert('Link copiado'); }
 function soltarConfete(){ for(let i=0;i<80;i++){ const c=document.createElement('div'); c.className='confete'; c.style.left=Math.random()*100+'vw'; c.style.backgroundColor=`hsl(${Math.random()*360},100%,50%)`; document.body.appendChild(c); setTimeout(()=>c.remove(),4000); } }
 function mostrarPremio(){ document.getElementById('modalPremio').classList.remove('hidden'); document.getElementById('modalPremio').classList.add('flex'); soltarConfete(); }
 function fecharPremio(){ document.getElementById('modalPremio').classList.add('hidden'); document.getElementById('modalPremio').classList.remove('flex'); }
@@ -896,7 +896,7 @@ function render(){
               if(isFree){
                 html+=`<div class="border bg-black text-white cell-square flex-col leading-none text-[7px] font-black cursor-default"><span>BINGO</span><span>FELIZ</span></div>`;
               } else {
-                html+=`<div onclick="toggleNumeroManual(${v})" class="border bg-white cell-square text-xs font-bold relative cursor-pointer select-none"><span class="cell-num">${v}</span>${estaMarcado?`<span class="marcador-svg" style="color:${eu.cor\vert{}\vert{}'#000'}">${ICONES[eu.marcadorTipo]||ICONES.check}</span>`:''}</div>`;
+                html+=`<div onclick="toggleNumeroManual(${v})" class="border bg-white cell-square text-xs font-bold relative cursor-pointer select-none"><span class="cell-num">${v}</span>${estaMarcado?`<span class="marcador-svg" style="color:${eu.cor||'#000'}">${ICONES[eu.marcadorTipo]||ICONES.check}</span>`:''}</div>`;
               }
             });
           });
